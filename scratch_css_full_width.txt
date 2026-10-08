@@ -1,0 +1,1 @@
+﻿header-full-width .container{max-width:100%!important}@media(max-width:849px){.header-main li.html.custom{display:none}}@media(prefers-reduced-motion){.sticky-jump .stuck{animation-name:stuckFadeIn}}@media(max-width:549px){.nav-mobile>li>a:not(.button){line-height:5em}}.post{margin:0 0 30px}.masoner

@@ -1,0 +1,24 @@
+﻿function flatsome_header_elements( $options, $type = '' ) {
+	// Get options.
+	$get_options = get_theme_mod( $options );
+
+	$walker                         = 'FlatsomeNavDropdown';
+	if ($type == 'sidebar') $walker = 'FlatsomeNavSidebar';
+
+	// Set options.
+	if ( is_array( $get_options ) ) {
+
+		foreach ( $get_options as $key => $value ) {
+
+			if ( $value == 'divider' || $value == 'divider_2' || $value == 'divider_3' || $value == 'divider_4' || $value == 'divider_5' ) {
+				echo '<li class="header-divider"></li>';
+			} elseif ( $value == 'html' || $value == 'html-2' || $value == 'html-3' || $value == 'html-4' || $value == 'html-5' ) {
+				flatsome_get_header_html_element( $value );
+			} elseif ( $value == 'block-1' || $value == 'block-2' || $value == 'block-3' || $value == 'block-4' ) {
+				echo do_shortcode( '<li class="header-block"><div class="header-block-' . $value . '">[block id="' . get_theme_mod( 'header-' . $value ) . '"]</div></li>' );
+			} elseif ( $value == 'nav-top' ) {
+				flatsome_header_nav( 'top_bar_nav', $walker );
+			} elseif ( $value == 'nav' ) {
+				flatsome_header_nav( 'primary', $walker );
+			} elseif ( $value == 'nav-secondary' ) {
+				flatsome_header_nav( 'secon

@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-800 antialiased;
+  }
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Button Animation Effects */
+.btn-anim-shimmer, .btn-anim-combo {
+  position: relative !important;
+  overflow: hidden !important;
+}
+.btn-anim-shimmer::after, .btn-anim-combo::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -100% !important;
+  width: 60% !important;
+  height: 100% !important;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.75) 50%, rgba(255,255,255,0) 100%) !important;
+  transform: skewX(-25deg) !important;
+  animation: jglBtnShimmerSweep 2.8s infinite ease-in-out !important;
+  pointer-events: none !important;
+}
+@keyframes jglBtnShimmerSweep {
+  0% { left: -100%; }
+  35%, 100% { left: 200%; }
+}
+
+.btn-anim-shake, .btn-anim-combo {
+  animation: jglBtnShakeNotice 3.5s infinite ease-in-out !important;
+  transform-origin: center center !important;
+}
+@keyframes jglBtnShakeNotice {
+  0%, 75%, 100% { transform: scale(1) rotate(0deg); }
+  78% { transform: scale(1.06) rotate(-3.5deg); }
+  81% { transform: scale(1.06) rotate(3.5deg); }
+  84% { transform: scale(1.06) rotate(-3.5deg); }
+  87% { transform: scale(1.06) rotate(2deg); }
+  90% { transform: scale(1) rotate(0deg); }
+}
+
+.btn-anim-pulse {
+  animation: jglBtnHeartPulse 2s infinite ease-in-out !important;
+}
+@keyframes jglBtnHeartPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+.btn-anim-glow {
+  animation: jglBtnGlowPulse 2.2s infinite ease-in-out !important;
+}
+@keyframes jglBtnGlowPulse {
+  0%, 100% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.4), 0 0 10px currentColor; }
+  50% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px currentColor; }
+}

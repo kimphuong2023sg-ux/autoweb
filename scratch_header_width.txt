@@ -1,0 +1,20 @@
+﻿
+	// Add Header width class.
+	if (get_theme_mod( 'header_width' ) == 'full-width') $classes[] = 'header-full-width';
+
+	// Disable sticky if no header element is set as sticky.
+	if ( ! get_theme_mod( 'header_sticky', 1 ) && ! get_theme_mod( 'topbar_sticky' ) && ! get_theme_mod( 'bottombar_sticky', 1 ) ) {
+		$disable_sticky = true;
+	}
+
+	// Add Sticky class.
+	if ( ! $disable_sticky ) {
+		$classes[] = 'has-sticky';
+		$classes[] = 'sticky-' . get_theme_mod( 'sticky_style', 'jump' );
+
+		if ( get_theme_mod( 'sticky_hide_on_scroll' ) ) {
+			$classes[] = 'sticky-hide-on-scroll';
+		}
+	}
+
+	return $classe

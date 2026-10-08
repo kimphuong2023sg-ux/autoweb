@@ -1,0 +1,42 @@
+﻿tsome_header_nav( 'top_bar_nav', $walker );
+			} elseif ( $value == 'nav' ) {
+				flatsome_header_nav( 'primary', $walker );
+			} elseif ( $value == 'nav-secondary' ) {
+				flatsome_header_nav( 'secondary', $walker );
+			} elseif ( $value == 'nav-vertical' && $type === 'sidebar' ) {
+				flatsome_header_nav( 'vertical', $walker );
+			} elseif ( $value == 'wpml' ) {
+				get_template_part( 'template-parts/header/partials/element-languages', $type );
+			} else {
+				get_template_part( 'template-parts/header/partials/element-' . $value, $type );
+			}
+			// Hooked Elements.
+			do_action( 'flatsome_header_elements', $value );
+		}
+	}
+}
+
+/**
+ * Get Header HTML Elements.
+ *
+ * @param string $value Header HTML elements.
+ *
+ * @return void
+ */
+function flatsome_get_header_html_element( $value ) {
+	$mod = array(
+		'name'    => '',
+		'default' => '',
+	);
+
+	if ( $value == 'html' ) {
+		$mod['name']    = 'topbar_left';
+		$mod['default'] = '<strong class="uppercase">Add anything here or just remove it...</strong>';
+	}
+	if ( $value == 'html-2' ) $mod['name'] = 'topbar_right';
+	if ( $value == 'html-3' ) $mod['name'] = 'top_right_text';
+	if ( $value == 'html-4' ) $mod['name'] = 'nav_position_text_top';
+	if ( $value == 'html-5' ) $mod['name'] = 'nav_position_text';
+
+	if ( get_theme_mod( $mod['name'], $mod['default'] ) ) {
+		echo '<li class="html custom html_' . $mod['name'] . '">' . do_shortcode( get_theme_mod( $mod['name'], $mod['default'] ) ) . '</li>'; // phpcs:ignore WordPress.Security.EscapeO

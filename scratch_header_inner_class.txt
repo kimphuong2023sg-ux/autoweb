@@ -1,0 +1,30 @@
+﻿function header_inner_class( $position ) {
+
+	$classes      = null;
+	$current_page = null;
+
+	// Header main.
+	if ( $position == 'main' ) {
+
+		if ( get_theme_mod( 'logo_position' ) == 'center' ) {
+			$classes[] = 'show-logo-center';
+		}
+
+		if ( ! get_theme_mod( 'header_sticky', 1 )) $classes[] = 'hide-for-sticky';
+
+		if ( get_theme_mod( 'site_logo_sticky' ) ) {
+			$classes[] = 'has-sticky-logo';
+		}
+
+		if (get_theme_mod( 'header_color' ) == 'dark') $classes[] = 'nav-dark';
+	}
+
+	// Header top.
+	if ( $position == 'top' ) {
+		if ( ! get_theme_mod( 'topbar_sticky' )) $classes[]               = 'hide-for-sticky';
+		if (get_theme_mod( 'topbar_color', 'dark' ) == 'dark') $classes[] = 'nav-dark';
+		if (get_theme_mod( 'topbar_elements_center' )) $classes[]         = 'flex-has-center';
+		if ( ! get_theme_mod( 'header_mobile_elements_top' ) ) {
+			$classes[] = 'hide-for-medium';
+		} elseif ( get_theme_mod( 'header_mobile_elements_top' ) && flatsome_has_top_bar()['mobile_only'] ) {
+			$classes[] = '

@@ -1,0 +1,18 @@
+﻿// Header bottom.
+	if ( $position == 'bottom' ) {
+		if ( ! get_theme_mod( 'bottombar_sticky', 1 )) $classes[]              = 'hide-for-sticky';
+		if (get_theme_mod( 'nav_position_color' ) == 'dark') $classes[]        = 'nav-dark';
+		if (get_theme_mod( 'nav_position_color' ) == 'dark-header') $classes[] = 'nav-dark';
+		if (get_theme_mod( 'header_elements_bottom_center' )) $classes[]       = 'flex-has-center';
+		if ( ! get_theme_mod( 'header_mobile_elements_bottom' ) ) {
+			$classes[] = 'hide-for-medium';
+		} elseif ( get_theme_mod( 'header_mobile_elements_bottom' ) && flatsome_has_bottom_bar()['mobile_only'] ) {
+			$classes[] = 'show-for-medium';
+		}
+	}
+
+	// Dark nav on light headers.
+	$page_template             = get_post_meta( get_the_ID(), '_wp_page_template', true );
+	$default_template          = get_theme_mod( 'pages_template', 'default' );
+	$is_light_template         = ! empty( $page_template ) && strpos( $page_template, 'light' ) !== false;
+	$is_light_default_template = is_page()
