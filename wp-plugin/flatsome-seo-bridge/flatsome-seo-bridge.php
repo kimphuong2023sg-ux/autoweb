@@ -93,6 +93,12 @@ class Flatsome_SEO_Bridge {
         add_filter('theme_mod_rank_math_breadcrumb', array($this, 'filter_rank_math_breadcrumb_mod'), 999);
         add_shortcode('autoweb_breadcrumb', array($this, 'shortcode_autoweb_breadcrumb'));
         add_shortcode('flatsome_rank_math_breadcrumb', array($this, 'shortcode_autoweb_breadcrumb'));
+
+        // Flatsome AutoTheme: Button SEO Rel (Nofollow) Guaranteed Output
+        add_filter('theme_mod_header_button_1_link_rel', array($this, 'filter_header_button_1_link_rel'), 999);
+        add_filter('theme_mod_header_button_2_link_rel', array($this, 'filter_header_button_2_link_rel'), 999);
+        add_filter('flatsome_html_atts', array($this, 'filter_flatsome_html_atts_button_rel'), 999);
+        add_action('wp_footer', array($this, 'inject_button_rel_fallback_script'), 9999);
     }
 
     public function filter_ux_builder_shortcode_data_safety($data) {
@@ -131,6 +137,94 @@ class Flatsome_SEO_Bridge {
             return $url ?: '';
         }
         return $val;
+    }
+
+    public function filter_header_button_1_link_rel($val) {
+        $saved = get_option('flatsome_seo_header_button_1_rel', null);
+        if ($saved !== null && $saved !== '') return $saved;
+        if (!empty($val)) return $val;
+        // Tự động gán nofollow nếu là link ngoài / tracking affiliate URL
+        $link = get_theme_mod('header_button_1_link');
+        if (!empty($link) && (strpos($link, 'http://') === 0 || strpos($link, 'https://') === 0)) {
+            $site_host = parse_url(home_url(), PHP_URL_HOST);
+            $link_host = parse_url($link, PHP_URL_HOST);
+            if ($site_host && $link_host && strtolower($site_host) !== strtolower($link_host)) {
+                return 'nofollow';
+            }
+        }
+        return $val;
+    }
+
+    public function filter_header_button_2_link_rel($val) {
+        $saved = get_option('flatsome_seo_header_button_2_rel', null);
+        if ($saved !== null && $saved !== '') return $saved;
+        if (!empty($val)) return $val;
+        $link = get_theme_mod('header_button_2_link');
+        if (!empty($link) && (strpos($link, 'http://') === 0 || strpos($link, 'https://') === 0)) {
+            $site_host = parse_url(home_url(), PHP_URL_HOST);
+            $link_host = parse_url($link, PHP_URL_HOST);
+            if ($site_host && $link_host && strtolower($site_host) !== strtolower($link_host)) {
+                return 'nofollow';
+            }
+        }
+        return $val;
+    }
+
+    public function filter_flatsome_html_atts_button_rel($atts) {
+        if (empty($atts['href'])) return $atts;
+        $href = $atts['href'];
+        $b1_link = get_theme_mod('header_button_1_link');
+        $b2_link = get_theme_mod('header_button_2_link');
+
+        $target_rel = '';
+        if (!empty($b1_link) && $href === $b1_link) {
+            $target_rel = $this->filter_header_button_1_link_rel(get_theme_mod('header_button_1_link_rel'));
+        } elseif (!empty($b2_link) && $href === $b2_link) {
+            $target_rel = $this->filter_header_button_2_link_rel(get_theme_mod('header_button_2_link_rel'));
+        }
+
+        if (!empty($target_rel)) {
+            $existing_rel = !empty($atts['rel']) ? (is_array($atts['rel']) ? $atts['rel'] : explode(' ', $atts['rel'])) : array();
+            foreach (explode(' ', $target_rel) as $r) {
+                $r = trim($r);
+                if ($r && !in_array($r, $existing_rel)) {
+                    $existing_rel[] = $r;
+                }
+            }
+            $atts['rel'] = $existing_rel;
+        }
+        return $atts;
+    }
+
+    public function inject_button_rel_fallback_script() {
+        ?>
+        <script id="flatsome-seo-button-rel-script">
+        (function() {
+            function applyButtonRel() {
+                var buttons = document.querySelectorAll('.header-button-1 a, .header-button-2 a');
+                buttons.forEach(function(a) {
+                    var href = a.getAttribute('href');
+                    if (href && (href.indexOf('http://') === 0 || href.indexOf('https://') === 0 || href.indexOf('//') === 0)) {
+                        try {
+                            var linkHost = new URL(href, window.location.origin).hostname;
+                            if (linkHost && linkHost !== window.location.hostname) {
+                                var rel = (a.getAttribute('rel') || '').trim();
+                                if (rel.indexOf('nofollow') === -1) {
+                                    a.setAttribute('rel', rel ? rel + ' nofollow' : 'nofollow');
+                                }
+                            }
+                        } catch(e) {}
+                    }
+                });
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', applyButtonRel);
+            } else {
+                applyButtonRel();
+            }
+        })();
+        </script>
+        <?php
     }
 
     public function filter_mobile_sidebar($elements) {
@@ -585,12 +679,16 @@ class Flatsome_SEO_Bridge {
             // Buttons (CTA 1 & 2)
             'header_button_1' => isset($theme_mods['header_button_1']) ? $theme_mods['header_button_1'] : (get_theme_mod('header_button_1', '') ?: ''),
             'header_button_1_link' => isset($theme_mods['header_button_1_link']) ? $theme_mods['header_button_1_link'] : (get_theme_mod('header_button_1_link', '') ?: ''),
+            'header_button_1_link_target' => isset($theme_mods['header_button_1_link_target']) ? $theme_mods['header_button_1_link_target'] : (get_theme_mod('header_button_1_link_target', '_self') ?: '_self'),
+            'header_button_1_link_rel' => isset($theme_mods['header_button_1_link_rel']) ? $theme_mods['header_button_1_link_rel'] : (get_theme_mod('header_button_1_link_rel', '') ?: ''),
             'header_button_1_color' => isset($theme_mods['header_button_1_color']) ? $theme_mods['header_button_1_color'] : (get_theme_mod('header_button_1_color', 'primary') ?: 'primary'),
             'header_button_1_style' => isset($theme_mods['header_button_1_style']) ? $theme_mods['header_button_1_style'] : (get_theme_mod('header_button_1_style', 'is-flat') ?: 'is-flat'),
             'header_button_1_radius' => isset($theme_mods['header_button_1_radius']) ? $theme_mods['header_button_1_radius'] : (get_theme_mod('header_button_1_radius', '99px') ?: '99px'),
 
             'header_button_2' => isset($theme_mods['header_button_2']) ? $theme_mods['header_button_2'] : (get_theme_mod('header_button_2', '') ?: ''),
             'header_button_2_link' => isset($theme_mods['header_button_2_link']) ? $theme_mods['header_button_2_link'] : (get_theme_mod('header_button_2_link', '') ?: ''),
+            'header_button_2_link_target' => isset($theme_mods['header_button_2_link_target']) ? $theme_mods['header_button_2_link_target'] : (get_theme_mod('header_button_2_link_target', '_self') ?: '_self'),
+            'header_button_2_link_rel' => isset($theme_mods['header_button_2_link_rel']) ? $theme_mods['header_button_2_link_rel'] : (get_theme_mod('header_button_2_link_rel', '') ?: ''),
             'header_button_2_color' => isset($theme_mods['header_button_2_color']) ? $theme_mods['header_button_2_color'] : (get_theme_mod('header_button_2_color', 'secondary') ?: 'secondary'),
             'header_button_2_style' => isset($theme_mods['header_button_2_style']) ? $theme_mods['header_button_2_style'] : (get_theme_mod('header_button_2_style', 'is-flat') ?: 'is-flat'),
             'header_button_2_radius' => isset($theme_mods['header_button_2_radius']) ? $theme_mods['header_button_2_radius'] : (get_theme_mod('header_button_2_radius', '99px') ?: '99px'),
@@ -1499,8 +1597,13 @@ class Flatsome_SEO_Bridge {
         if (isset($body['header_button_1_link'])) {
             set_theme_mod('header_button_1_link', esc_url_raw($body['header_button_1_link']));
         }
-        if (!empty($body['header_button_1_link_target'])) {
+        if (isset($body['header_button_1_link_target'])) {
             set_theme_mod('header_button_1_link_target', sanitize_text_field($body['header_button_1_link_target']));
+        }
+        if (isset($body['header_button_1_link_rel'])) {
+            $rel1 = sanitize_text_field($body['header_button_1_link_rel']);
+            set_theme_mod('header_button_1_link_rel', $rel1);
+            update_option('flatsome_seo_header_button_1_rel', $rel1);
         }
         if (!empty($body['header_button_1_color'])) {
             set_theme_mod('header_button_1_color', sanitize_text_field($body['header_button_1_color']));
@@ -1519,8 +1622,13 @@ class Flatsome_SEO_Bridge {
         if (isset($body['header_button_2_link'])) {
             set_theme_mod('header_button_2_link', esc_url_raw($body['header_button_2_link']));
         }
-        if (!empty($body['header_button_2_link_target'])) {
+        if (isset($body['header_button_2_link_target'])) {
             set_theme_mod('header_button_2_link_target', sanitize_text_field($body['header_button_2_link_target']));
+        }
+        if (isset($body['header_button_2_link_rel'])) {
+            $rel2 = sanitize_text_field($body['header_button_2_link_rel']);
+            set_theme_mod('header_button_2_link_rel', $rel2);
+            update_option('flatsome_seo_header_button_2_rel', $rel2);
         }
         if (!empty($body['header_button_2_color'])) {
             set_theme_mod('header_button_2_color', sanitize_text_field($body['header_button_2_color']));
@@ -5336,7 +5444,7 @@ footer.entry-meta, .entry-footer .entry-meta, .blog-single footer.entry-meta {
             echo '<div class="autoweb-cta-badge">OFERTA VIP</div>';
             echo '<h4 class="autoweb-cta-sidebar-title">' . esc_html($cta_title) . '</h4>';
             echo '<p class="autoweb-cta-sidebar-desc">' . esc_html($cta_desc) . '</p>';
-            echo '<a href="' . esc_url($cta_link) . '" class="button autoweb-cta-sidebar-btn">' . esc_html($cta_btn) . ' ➔</a>';
+            echo '<a href="' . esc_url($cta_link) . '" rel="nofollow" class="button autoweb-cta-sidebar-btn">' . esc_html($cta_btn) . ' ➔</a>';
             echo '</div>';
         }
     }

@@ -2913,24 +2913,59 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
 
                     {/* Button Text & Link (if applicable) */}
                     {['hero', 'banner', 'cta', 'about'].includes(sec.type) && (
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                         <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">Tên Nút Bấm</label>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">Tên Nút Bấm</label>
                           <input
                             type="text"
                             value={sec.buttonText || ''}
                             onChange={(e) => handleUpdateSection(sec.id, { buttonText: e.target.value })}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-medium"
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-800 outline-hidden focus:border-blue-500"
                           />
                         </div>
                         <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 mb-1">Link Nút Bấm</label>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">Link Nút Bấm</label>
                           <input
                             type="text"
                             value={sec.buttonLink || ''}
                             onChange={(e) => handleUpdateSection(sec.id, { buttonLink: e.target.value })}
-                            className="w-full bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-medium"
+                            placeholder="https://..."
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-800 outline-hidden focus:border-blue-500 font-mono"
                           />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">Mở Tab</label>
+                          <select
+                            value={sec.buttonTarget || sec.data?.buttonTarget || '_self'}
+                            onChange={(e) =>
+                              handleUpdateSection(sec.id, {
+                                buttonTarget: e.target.value as '_self' | '_blank',
+                                data: { ...(sec.data || {}), buttonTarget: e.target.value },
+                              })
+                            }
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-800 outline-hidden focus:border-blue-500 cursor-pointer"
+                          >
+                            <option value="_self">Cùng Tab (_self)</option>
+                            <option value="_blank">Tab Mới (_blank)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1">SEO Rel</label>
+                          <select
+                            value={sec.buttonRel !== undefined ? sec.buttonRel : (sec.data?.buttonRel ?? 'nofollow')}
+                            onChange={(e) =>
+                              handleUpdateSection(sec.id, {
+                                buttonRel: e.target.value,
+                                data: { ...(sec.data || {}), buttonRel: e.target.value },
+                              })
+                            }
+                            className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-800 outline-hidden focus:border-blue-500 cursor-pointer"
+                          >
+                            <option value="nofollow">Nofollow (Khuyên dùng)</option>
+                            <option value="">Dofollow (Mặc định)</option>
+                            <option value="nofollow noopener noreferrer">nofollow noopener noreferrer</option>
+                            <option value="sponsored nofollow">sponsored nofollow</option>
+                          </select>
                         </div>
                       </div>
                     )}
@@ -3692,7 +3727,7 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
 
                             {(sec.data?.hasButton1 ?? true) && (
                               <div className="space-y-2 pt-1 animate-in fade-in duration-100">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                                   <div>
                                     <label className="text-[10px] text-slate-400 mb-0.5 block">Tên Nút Bấm 1</label>
                                     <input
@@ -3722,6 +3757,40 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
                                       }}
                                       className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white outline-hidden focus:border-blue-500 font-mono"
                                     />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] text-slate-400 mb-0.5 block">Mở Tab</label>
+                                    <select
+                                      value={sec.data?.button1Target || sec.buttonTarget || '_self'}
+                                      onChange={(e) => {
+                                        handleUpdateSection(sec.id, {
+                                          buttonTarget: e.target.value as '_self' | '_blank',
+                                          data: { ...(sec.data || {}), button1Target: e.target.value },
+                                        });
+                                      }}
+                                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white outline-hidden focus:border-blue-500 cursor-pointer"
+                                    >
+                                      <option value="_self">Cùng Tab (_self)</option>
+                                      <option value="_blank">Tab Mới (_blank)</option>
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] text-slate-400 mb-0.5 block">SEO Rel</label>
+                                    <select
+                                      value={sec.data?.button1Rel !== undefined ? sec.data.button1Rel : (sec.buttonRel ?? 'nofollow')}
+                                      onChange={(e) => {
+                                        handleUpdateSection(sec.id, {
+                                          buttonRel: e.target.value,
+                                          data: { ...(sec.data || {}), button1Rel: e.target.value },
+                                        });
+                                      }}
+                                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white outline-hidden focus:border-blue-500 cursor-pointer"
+                                    >
+                                      <option value="nofollow">Nofollow (Khuyên dùng)</option>
+                                      <option value="">Dofollow (Mặc định)</option>
+                                      <option value="nofollow noopener noreferrer">nofollow noopener noreferrer</option>
+                                      <option value="sponsored nofollow">sponsored nofollow</option>
+                                    </select>
                                   </div>
                                 </div>
 
@@ -3853,7 +3922,7 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
 
                             {Boolean(sec.data?.hasButton2) && (
                               <div className="space-y-2 pt-1 animate-in fade-in duration-100">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                                   <div>
                                     <label className="text-[10px] text-slate-400 mb-0.5 block">Tên Nút Bấm 2</label>
                                     <input
@@ -3881,6 +3950,38 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
                                       }}
                                       className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white outline-hidden focus:border-blue-500 font-mono"
                                     />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] text-slate-400 mb-0.5 block">Mở Tab</label>
+                                    <select
+                                      value={sec.data?.button2Target || '_self'}
+                                      onChange={(e) => {
+                                        handleUpdateSection(sec.id, {
+                                          data: { ...(sec.data || {}), button2Target: e.target.value },
+                                        });
+                                      }}
+                                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white outline-hidden focus:border-blue-500 cursor-pointer"
+                                    >
+                                      <option value="_self">Cùng Tab (_self)</option>
+                                      <option value="_blank">Tab Mới (_blank)</option>
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] text-slate-400 mb-0.5 block">SEO Rel</label>
+                                    <select
+                                      value={sec.data?.button2Rel !== undefined ? sec.data.button2Rel : 'nofollow'}
+                                      onChange={(e) => {
+                                        handleUpdateSection(sec.id, {
+                                          data: { ...(sec.data || {}), button2Rel: e.target.value },
+                                        });
+                                      }}
+                                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white outline-hidden focus:border-blue-500 cursor-pointer"
+                                    >
+                                      <option value="nofollow">Nofollow (Khuyên dùng)</option>
+                                      <option value="">Dofollow (Mặc định)</option>
+                                      <option value="nofollow noopener noreferrer">nofollow noopener noreferrer</option>
+                                      <option value="sponsored nofollow">sponsored nofollow</option>
+                                    </select>
                                   </div>
                                 </div>
 
@@ -4595,6 +4696,56 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
                                   Copy URL
                                 </button>
                               )}
+                            </div>
+                          </div>
+
+                          {/* Image Link (Gắn link khi người dùng nhấp vào ảnh) */}
+                          <div className="space-y-1.5 pt-2 border-t border-slate-200">
+                            <label className="block text-[11px] font-bold text-slate-700">
+                              🔗 Liên kết khi nhấp vào ảnh (Image Link URL)
+                            </label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                              <div className="sm:col-span-2">
+                                <input
+                                  type="text"
+                                  value={sec.buttonLink || ''}
+                                  placeholder="https://... (để trống nếu không gắn link)"
+                                  onChange={(e) => handleUpdateSection(sec.id, { buttonLink: e.target.value })}
+                                  className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 outline-hidden focus:border-blue-500 font-mono"
+                                />
+                              </div>
+                              <div>
+                                <select
+                                  value={sec.buttonTarget || sec.data?.buttonTarget || '_self'}
+                                  onChange={(e) =>
+                                    handleUpdateSection(sec.id, {
+                                      buttonTarget: e.target.value as '_self' | '_blank',
+                                      data: { ...(sec.data || {}), buttonTarget: e.target.value },
+                                    })
+                                  }
+                                  className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs text-slate-800 outline-hidden focus:border-blue-500 cursor-pointer"
+                                >
+                                  <option value="_self">Cùng Tab (_self)</option>
+                                  <option value="_blank">Tab Mới (_blank)</option>
+                                </select>
+                              </div>
+                              <div>
+                                <select
+                                  value={sec.buttonRel !== undefined ? sec.buttonRel : (sec.data?.buttonRel ?? 'nofollow')}
+                                  onChange={(e) =>
+                                    handleUpdateSection(sec.id, {
+                                      buttonRel: e.target.value,
+                                      data: { ...(sec.data || {}), buttonRel: e.target.value },
+                                    })
+                                  }
+                                  className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs text-slate-800 outline-hidden focus:border-blue-500 cursor-pointer"
+                                >
+                                  <option value="nofollow">Nofollow (Khuyên dùng)</option>
+                                  <option value="">Dofollow (Mặc định)</option>
+                                  <option value="nofollow noopener noreferrer">nofollow noopener noreferrer</option>
+                                  <option value="sponsored nofollow">sponsored nofollow</option>
+                                </select>
+                              </div>
                             </div>
                           </div>
 

@@ -39,6 +39,8 @@ export interface SectionItem {
   content?: string;
   buttonText?: string;
   buttonLink?: string;
+  buttonTarget?: '_self' | '_blank';
+  buttonRel?: string;
   bgColor?: string;
   padding?: string;
   layout?: '1-col' | '2-col-equal' | '2-col-left-wide' | '2-col-right-wide' | '3-col-equal' | '4-col-equal';
@@ -303,12 +305,16 @@ export class CompilerService {
     const subtitle = sec.subtitle || '';
     const btnText = sec.buttonText || '';
     const btnLink = sec.buttonLink || '#contact';
+    const btnTarget = sec.buttonTarget || sec.data?.buttonTarget || sec.data?.button1Target || '_self';
+    const btnRel = sec.buttonRel !== undefined ? sec.buttonRel : (sec.data?.buttonRel !== undefined ? sec.data.buttonRel : (sec.data?.button1Rel !== undefined ? sec.data.button1Rel : 'nofollow'));
     const padding = this.getPaddingVal(sec.padding);
     const vis = this.getVisibilityAttr(sec);
 
     const titleBlock = title ? `[title style="bold" text="${title}" tag_name="h1" size="140"]` : '';
     const subtitleBlock = subtitle ? `\n[ux_text font_size="1.1" text_color="rgb(80, 80, 80)"]\n<p>${subtitle}</p>\n[/ux_text]` : '';
-    const buttonBlock = btnText ? `\n[gap height="15px"]\n[button text="${btnText}" link="${btnLink}" color="primary" size="large" radius="6"]` : '';
+    const targetAttr = btnTarget && btnTarget !== '_self' ? ` target="${btnTarget}"` : '';
+    const relAttr = btnRel ? ` rel="${btnRel}"` : '';
+    const buttonBlock = btnText ? `\n[gap height="15px"]\n[button text="${btnText}" link="${btnLink}"${targetAttr}${relAttr} color="primary" size="large" radius="6"]` : '';
 
     const hasImage = Boolean(sec.data?.imageId || sec.data?.imageUrl);
     const imageBlock = hasImage ? `[ux_image id="${sec.data?.imageId || ''}" image_size="large" depth="2" depth_hover="4"]` : '';
@@ -380,6 +386,13 @@ ${cols}[/row]
     const padding = this.getPaddingVal(sec.padding);
     const vis = this.getVisibilityAttr(sec);
 
+    const btnText = sec.buttonText || 'Xem Chi Tiết';
+    const btnLink = sec.buttonLink || '#contact';
+    const btnTarget = sec.buttonTarget || sec.data?.buttonTarget || '_self';
+    const btnRel = sec.buttonRel !== undefined ? sec.buttonRel : (sec.data?.buttonRel !== undefined ? sec.data.buttonRel : 'nofollow');
+    const targetAttr = btnTarget && btnTarget !== '_self' ? ` target="${btnTarget}"` : '';
+    const relAttr = btnRel ? ` rel="${btnRel}"` : '';
+
     return `[section bg_color="${bg}" padding="${padding}"${vis}]
 [row v_align="middle"]
 [col span="6" span__sm="12"]
@@ -397,7 +410,7 @@ ${cols}[/row]
 </ul>
 [/ux_text]
 [gap height="10px"]
-[button text="Xem Chi Tiết" link="#contact" color="primary" radius="5"]
+[button text="${btnText}" link="${btnLink}"${targetAttr}${relAttr} color="primary" radius="5"]
 [/col]
 [/row]
 [/section]`;
@@ -464,13 +477,17 @@ ${items}[/accordion]
     const subtitle = sec.subtitle || '';
     const btnText = sec.buttonText || '';
     const btnLink = sec.buttonLink || 'tel:0988000000';
+    const btnTarget = sec.buttonTarget || sec.data?.buttonTarget || '_self';
+    const btnRel = sec.buttonRel !== undefined ? sec.buttonRel : (sec.data?.buttonRel !== undefined ? sec.data.buttonRel : 'nofollow');
     const bg = sec.bgColor || 'rgb(30, 41, 59)';
     const padding = this.getPaddingVal(sec.padding);
     const vis = this.getVisibilityAttr(sec);
 
     const titleBlock = title ? `[title style="bold" text="${title}" color="rgb(255, 255, 255)" tag_name="h2"]` : '';
     const subtitleBlock = subtitle ? `\n[ux_text text_color="rgb(226, 232, 240)"]\n<p>${subtitle}</p>\n[/ux_text]` : '';
-    const buttonBlock = btnText ? `[button text="${btnText}" link="${btnLink}" color="white" style="primary" size="large" radius="6"]` : '';
+    const targetAttr = btnTarget && btnTarget !== '_self' ? ` target="${btnTarget}"` : '';
+    const relAttr = btnRel ? ` rel="${btnRel}"` : '';
+    const buttonBlock = btnText ? `[button text="${btnText}" link="${btnLink}"${targetAttr}${relAttr} color="white" style="primary" size="large" radius="6"]` : '';
 
     if (!btnText) {
       return `[section bg_color="${bg}" dark="true" padding="${padding}"${vis}]
@@ -560,13 +577,17 @@ ${buttonBlock}
     const subtitle = sec.subtitle || '';
     const btnText = sec.buttonText || '';
     const btnLink = sec.buttonLink || '#';
+    const btnTarget = sec.buttonTarget || sec.data?.buttonTarget || '_self';
+    const btnRel = sec.buttonRel !== undefined ? sec.buttonRel : (sec.data?.buttonRel !== undefined ? sec.data.buttonRel : 'nofollow');
     const bg = sec.bgColor || 'rgb(15, 23, 42)';
     const bgImg = sec.data?.imageId ? `bg="${sec.data.imageId}"` : (sec.data?.imageUrl ? `bg="${sec.data.imageUrl}"` : '');
     const vis = this.getVisibilityAttr(sec);
 
     const titleBlock = title ? `[title style="bold" text="${title}" color="rgb(255,255,255)" tag_name="h1" size="140"]` : '';
     const subtitleBlock = subtitle ? `\n<p style="color: #f1f5f9; font-size: 1.15em;">${subtitle}</p>` : '';
-    const buttonBlock = btnText ? `\n[gap height="10px"]\n[button text="${btnText}" link="${btnLink}" color="primary" size="large" radius="6"]` : '';
+    const targetAttr = btnTarget && btnTarget !== '_self' ? ` target="${btnTarget}"` : '';
+    const relAttr = btnRel ? ` rel="${btnRel}"` : '';
+    const buttonBlock = btnText ? `\n[gap height="10px"]\n[button text="${btnText}" link="${btnLink}"${targetAttr}${relAttr} color="primary" size="large" radius="6"]` : '';
 
     const hasTextBoxContent = Boolean(titleBlock || subtitleBlock || buttonBlock);
     const textBoxContent = hasTextBoxContent
@@ -640,12 +661,16 @@ ${buttonBlock}
 
     let imageTag = '';
     const linkAttr = sec.buttonLink && sec.buttonLink !== '#' ? ` link="${sec.buttonLink}"` : '';
+    const imgTarget = sec.buttonTarget || sec.data?.buttonTarget || '_self';
+    const imgRel = sec.buttonRel !== undefined ? sec.buttonRel : (sec.data?.buttonRel !== undefined ? sec.data.buttonRel : 'nofollow');
+    const imgTargetAttr = linkAttr && imgTarget && imgTarget !== '_self' ? ` target="${imgTarget}"` : '';
+    const imgRelAttr = linkAttr && imgRel ? ` rel="${imgRel}"` : '';
     const depthAttr = isFullWidth ? '' : ' depth="1" depth_hover="3"';
 
     if (sec.data?.imageId) {
-      imageTag = `[ux_image id="${sec.data.imageId}" image_alt="${alt}" image_size="original"${depthAttr}${linkAttr} width="100"]`;
+      imageTag = `[ux_image id="${sec.data.imageId}" image_alt="${alt}" image_size="original"${depthAttr}${linkAttr}${imgTargetAttr}${imgRelAttr} width="100"]`;
     } else {
-      imageTag = `[ux_image id="" image_alt="${alt}" image_size="original"${depthAttr}${linkAttr} width="100"]`;
+      imageTag = `[ux_image id="" image_alt="${alt}" image_size="original"${depthAttr}${linkAttr}${imgTargetAttr}${imgRelAttr} width="100"]`;
     }
 
     if (isFullWidth) {
@@ -1139,6 +1164,8 @@ ${cols}[/row]
     const hasButton1 = data.hasButton1 !== false;
     const btn1Text = (data.button1Text !== undefined ? data.button1Text : (data.buttonText || sec.buttonText || (hasButton1 ? 'Đăng Ký Ngay' : ''))).trim();
     const btn1Link = data.button1Link || data.buttonLink || sec.buttonLink || '#';
+    const btn1Target = data.button1Target || sec.buttonTarget || '_self';
+    const btn1Rel = data.button1Rel !== undefined ? data.button1Rel : (sec.buttonRel !== undefined ? sec.buttonRel : 'nofollow');
     const btn1Color = data.button1Color || 'white';
     const btn1Style = data.button1Style || '';
     const btn1Size = data.button1Size || 'medium';
@@ -1147,6 +1174,8 @@ ${cols}[/row]
     const hasButton2 = Boolean(data.hasButton2);
     const btn2Text = (data.button2Text || '').trim();
     const btn2Link = data.button2Link || '#';
+    const btn2Target = data.button2Target || '_self';
+    const btn2Rel = data.button2Rel !== undefined ? data.button2Rel : 'nofollow';
     const btn2Color = data.button2Color || 'secondary';
     const btn2Style = data.button2Style || 'outline';
     const btn2Size = data.button2Size || 'medium';
@@ -1155,14 +1184,18 @@ ${cols}[/row]
     const btn1AnimClass = btn1Animation ? `btn-anim-${btn1Animation}` : '';
     const btn2AnimClass = btn2Animation ? `btn-anim-${btn2Animation}` : '';
 
+    const btn1TargetAttr = btn1Target && btn1Target !== '_self' ? ` target="${btn1Target}"` : '';
+    const btn1RelAttr = btn1Rel ? ` rel="${btn1Rel}"` : '';
     let btn1Shortcode = '';
     if (hasButton1 && btn1Text) {
-      btn1Shortcode = `[button text="${btn1Text}" link="${btn1Link}" color="${btn1Color}" ${btn1Style ? `style="${btn1Style}"` : ''} size="${btn1Size}" radius="5"${btn1AnimClass ? ` class="${btn1AnimClass}"` : ''}]`;
+      btn1Shortcode = `[button text="${btn1Text}" link="${btn1Link}"${btn1TargetAttr}${btn1RelAttr} color="${btn1Color}" ${btn1Style ? `style="${btn1Style}"` : ''} size="${btn1Size}" radius="5"${btn1AnimClass ? ` class="${btn1AnimClass}"` : ''}]`;
     }
 
+    const btn2TargetAttr = btn2Target && btn2Target !== '_self' ? ` target="${btn2Target}"` : '';
+    const btn2RelAttr = btn2Rel ? ` rel="${btn2Rel}"` : '';
     let btn2Shortcode = '';
     if (hasButton2 && btn2Text) {
-      btn2Shortcode = `[button text="${btn2Text}" link="${btn2Link}" color="${btn2Color}" ${btn2Style ? `style="${btn2Style}"` : ''} size="${btn2Size}" radius="5"${btn2AnimClass ? ` class="${btn2AnimClass}"` : ''}]`;
+      btn2Shortcode = `[button text="${btn2Text}" link="${btn2Link}"${btn2TargetAttr}${btn2RelAttr} color="${btn2Color}" ${btn2Style ? `style="${btn2Style}"` : ''} size="${btn2Size}" radius="5"${btn2AnimClass ? ` class="${btn2AnimClass}"` : ''}]`;
     }
 
     const boxLayout = data.boxLayout || (hasButton1 && btn1Text ? 'inline' : 'center');

@@ -30,6 +30,8 @@ import {
   X,
   Sliders,
   ChevronDown,
+  Loader2,
+  Rocket,
 } from 'lucide-react';
 import { ThemeConfig, WpInspectData } from '../../types';
 
@@ -111,6 +113,8 @@ interface FlatsomeHeaderBuilderProps {
   onChangeThemeConfig: (config: ThemeConfig) => void;
   inspectData?: WpInspectData | null;
   onOpenElementSettings?: (elementId: string) => void;
+  onApplyTheme?: (config?: ThemeConfig) => Promise<void>;
+  isApplying?: boolean;
 }
 
 export const FlatsomeHeaderBuilder: React.FC<FlatsomeHeaderBuilderProps> = ({
@@ -118,6 +122,8 @@ export const FlatsomeHeaderBuilder: React.FC<FlatsomeHeaderBuilderProps> = ({
   onChangeThemeConfig,
   inspectData,
   onOpenElementSettings,
+  onApplyTheme,
+  isApplying = false,
 }) => {
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'mobile'>('desktop');
   const [pickerTargetSlot, setPickerTargetSlot] = useState<SlotKey | null>(null);
@@ -1081,6 +1087,7 @@ export const FlatsomeHeaderBuilder: React.FC<FlatsomeHeaderBuilderProps> = ({
               const textVal = isBtn1 ? (themeConfig.headerButton1Text ?? '') : (themeConfig.headerButton2Text ?? '');
               const linkVal = isBtn1 ? (themeConfig.headerButton1Link ?? '') : (themeConfig.headerButton2Link ?? '');
               const targetVal = isBtn1 ? (themeConfig.headerButton1Target ?? '_self') : (themeConfig.headerButton2Target ?? '_self');
+              const relVal = isBtn1 ? (themeConfig.headerButton1Rel ?? 'nofollow') : (themeConfig.headerButton2Rel ?? 'nofollow');
               const colorVal = isBtn1 ? (themeConfig.headerButton1Color ?? 'alert') : (themeConfig.headerButton2Color ?? 'alert');
               const styleVal = isBtn1 ? (themeConfig.headerButton1Style ?? 'is-flat') : (themeConfig.headerButton2Style ?? 'is-flat');
               const radiusVal = isBtn1 ? (themeConfig.headerButton1Radius ?? '99px') : (themeConfig.headerButton2Radius ?? '99px');
@@ -1149,9 +1156,9 @@ export const FlatsomeHeaderBuilder: React.FC<FlatsomeHeaderBuilderProps> = ({
                     />
                   </div>
 
-                  {/* Link and Target */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    <div className="sm:col-span-2">
+                  {/* Link, Target and SEO Rel */}
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                    <div className="sm:col-span-6">
                       <label className="block text-xs font-semibold text-slate-700 mb-1">
                         Đường Dẫn Liên Kết (URL / Link)
                       </label>
@@ -1166,7 +1173,7 @@ export const FlatsomeHeaderBuilder: React.FC<FlatsomeHeaderBuilderProps> = ({
                         className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono font-medium text-slate-800 focus:bg-white"
                       />
                     </div>
-                    <div>
+                    <div className="sm:col-span-3">
                       <label className="block text-xs font-semibold text-slate-700 mb-1">
                         Mở Tab
                       </label>
@@ -1181,6 +1188,28 @@ export const FlatsomeHeaderBuilder: React.FC<FlatsomeHeaderBuilderProps> = ({
                       >
                         <option value="_self">Cùng Tab (_self)</option>
                         <option value="_blank">Tab Mới (_blank)</option>
+                      </select>
+                    </div>
+                    <div className="sm:col-span-3">
+                      <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                        <span>Thuộc Tính Rel</span>
+                        {relVal.includes('nofollow') && (
+                          <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1 rounded-xs">Nofollow</span>
+                        )}
+                      </label>
+                      <select
+                        value={relVal}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (isBtn1) updateBtn({ headerButton1Rel: val });
+                          else updateBtn({ headerButton2Rel: val });
+                        }}
+                        className="w-full bg-white border border-slate-300 rounded-lg px-2 py-2 text-xs font-medium text-slate-800"
+                      >
+                        <option value="nofollow">Nofollow (Khuyên dùng link ngoài/affiliate)</option>
+                        <option value="">Dofollow (Mặc định chuẩn SEO)</option>
+                        <option value="nofollow noopener noreferrer">Nofollow + Noopener + Noreferrer</option>
+                        <option value="sponsored nofollow">Sponsored + Nofollow (Link tài trợ)</option>
                       </select>
                     </div>
                   </div>
@@ -1257,14 +1286,42 @@ export const FlatsomeHeaderBuilder: React.FC<FlatsomeHeaderBuilderProps> = ({
               );
             })()}
 
-            <div className="pt-2 border-t border-slate-100 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setEditingContentModal(null)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition cursor-pointer"
-              >
-                Hoàn Tất
-              </button>
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+              <span className="text-[11px] text-slate-500">
+                {onApplyTheme ? '💡 Bấm "Lưu & Áp Dụng Lên Web" để đồng bộ ngay sang WordPress' : ''}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingContentModal(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition cursor-pointer"
+                >
+                  Hoàn Tất (Lưu Tạm)
+                </button>
+                {onApplyTheme && (
+                  <button
+                    type="button"
+                    disabled={isApplying}
+                    onClick={async () => {
+                      setEditingContentModal(null);
+                      await onApplyTheme(themeConfig);
+                    }}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    {isApplying ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Đang Áp Dụng...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Rocket className="w-3.5 h-3.5" />
+                        <span>Lưu &amp; Áp Dụng Lên Web Ngay</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

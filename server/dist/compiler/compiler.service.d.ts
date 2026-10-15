@@ -7,6 +7,8 @@ export interface SectionItem {
     content?: string;
     buttonText?: string;
     buttonLink?: string;
+    buttonTarget?: '_self' | '_blank';
+    buttonRel?: string;
     bgColor?: string;
     padding?: string;
     layout?: '1-col' | '2-col-equal' | '2-col-left-wide' | '2-col-right-wide' | '3-col-equal' | '4-col-equal';

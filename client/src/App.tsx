@@ -61,6 +61,7 @@ export const getInitialThemeConfig = (siteName?: string, primaryColor = '#0f3a61
   headerButton1Text: 'REGÍSTRATE',
   headerButton1Link: '#register',
   headerButton1Target: '_self',
+  headerButton1Rel: 'nofollow',
   headerButton1Color: 'alert',
   headerButton1Style: 'is-flat',
   headerButton1Radius: '99px',
@@ -69,6 +70,7 @@ export const getInitialThemeConfig = (siteName?: string, primaryColor = '#0f3a61
   headerButton2Text: 'ENTRAR',
   headerButton2Link: '#login',
   headerButton2Target: '_self',
+  headerButton2Rel: 'nofollow',
   headerButton2Color: 'alert',
   headerButton2Style: 'is-flat',
   headerButton2Radius: '99px',
@@ -583,6 +585,8 @@ export const App: React.FC = () => {
               ? data.flatsome.header_button_1
               : prev.headerButton1Text,
           headerButton1Link: data.flatsome.header_button_1_link || prev.headerButton1Link,
+          headerButton1Target: (data.flatsome.header_button_1_link_target as any) || prev.headerButton1Target || '_self',
+          headerButton1Rel: data.flatsome.header_button_1_link_rel !== undefined ? data.flatsome.header_button_1_link_rel : (prev.headerButton1Rel ?? 'nofollow'),
           headerButton1Color: (data.flatsome.header_button_1_color as any) || prev.headerButton1Color,
           headerButton1Style: (data.flatsome.header_button_1_style as any) || prev.headerButton1Style,
           headerButton1Radius: data.flatsome.header_button_1_radius || prev.headerButton1Radius,
@@ -592,6 +596,8 @@ export const App: React.FC = () => {
               ? data.flatsome.header_button_2
               : prev.headerButton2Text,
           headerButton2Link: data.flatsome.header_button_2_link || prev.headerButton2Link,
+          headerButton2Target: (data.flatsome.header_button_2_link_target as any) || prev.headerButton2Target || '_self',
+          headerButton2Rel: data.flatsome.header_button_2_link_rel !== undefined ? data.flatsome.header_button_2_link_rel : (prev.headerButton2Rel ?? 'nofollow'),
           headerButton2Color: (data.flatsome.header_button_2_color as any) || prev.headerButton2Color,
           headerButton2Style: (data.flatsome.header_button_2_style as any) || prev.headerButton2Style,
           headerButton2Radius: data.flatsome.header_button_2_radius || prev.headerButton2Radius,

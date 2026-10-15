@@ -43,11 +43,15 @@ export interface WpInspectData {
     default_page_template?: string;
     header_button_1?: string;
     header_button_1_link?: string;
+    header_button_1_link_target?: string;
+    header_button_1_link_rel?: string;
     header_button_1_color?: string;
     header_button_1_style?: string;
     header_button_1_radius?: string;
     header_button_2?: string;
     header_button_2_link?: string;
+    header_button_2_link_target?: string;
+    header_button_2_link_rel?: string;
     header_button_2_color?: string;
     header_button_2_style?: string;
     header_button_2_radius?: string;
@@ -124,6 +128,8 @@ export interface SectionItem {
   content?: string;
   buttonText?: string;
   buttonLink?: string;
+  buttonTarget?: '_self' | '_blank';
+  buttonRel?: string;
   bgColor?: string;
   padding?: string;
   layout?: ColumnLayoutPreset;
@@ -182,6 +188,7 @@ export interface ThemeConfig {
   headerButton1Text?: string;
   headerButton1Link?: string;
   headerButton1Target?: '_self' | '_blank';
+  headerButton1Rel?: string;
   headerButton1Color?: 'primary' | 'secondary' | 'success' | 'alert' | 'white' | 'plain';
   headerButton1Style?: 'is-flat' | 'is-outline' | 'is-shade';
   headerButton1Radius?: string;
@@ -190,6 +197,7 @@ export interface ThemeConfig {
   headerButton2Text?: string;
   headerButton2Link?: string;
   headerButton2Target?: '_self' | '_blank';
+  headerButton2Rel?: string;
   headerButton2Color?: 'primary' | 'secondary' | 'success' | 'alert' | 'white' | 'plain';
   headerButton2Style?: 'is-flat' | 'is-outline' | 'is-shade';
   headerButton2Radius?: string;

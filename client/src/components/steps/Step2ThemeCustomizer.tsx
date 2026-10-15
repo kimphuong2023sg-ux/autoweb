@@ -1264,6 +1264,8 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
               themeConfig={themeConfig}
               onChangeThemeConfig={onChangeThemeConfig}
               inspectData={inspectData}
+              onApplyTheme={handleQuickApplyTheme}
+              isApplying={isApplying}
               onOpenElementSettings={(elId) => {
                 if (elId === 'button-1' || elId === 'button-2') {
                   setActiveHeaderTab('buttons');
@@ -1698,68 +1700,113 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
                 </div>
 
                 {themeConfig.headerButton1Show && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-700 block mb-1">Tiêu Đề Nút 1</label>
-                      <input
-                        type="text"
-                        value={themeConfig.headerButton1Text || 'REGÍSTRATE'}
-                        onChange={(e) =>
-                          onChangeThemeConfig({ ...themeConfig, headerButton1Text: e.target.value })
-                        }
-                        placeholder="REGÍSTRATE hoặc Đăng Ký"
-                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-900 focus:outline-hidden"
-                      />
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-700 block mb-1">Tiêu Đề Nút 1</label>
+                        <input
+                          type="text"
+                          value={themeConfig.headerButton1Text || 'REGÍSTRATE'}
+                          onChange={(e) =>
+                            onChangeThemeConfig({ ...themeConfig, headerButton1Text: e.target.value })
+                          }
+                          placeholder="REGÍSTRATE hoặc Đăng Ký"
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-900 focus:outline-hidden"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-700 block mb-1">Đường Dẫn (URL/Link)</label>
+                        <input
+                          type="text"
+                          value={themeConfig.headerButton1Link || '#register'}
+                          onChange={(e) =>
+                            onChangeThemeConfig({ ...themeConfig, headerButton1Link: e.target.value })
+                          }
+                          placeholder="#register hoặc https://..."
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-mono font-medium text-slate-900 focus:outline-hidden"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-700 block mb-1">Mở Tab</label>
+                        <select
+                          value={themeConfig.headerButton1Target || '_self'}
+                          onChange={(e) =>
+                            onChangeThemeConfig({
+                              ...themeConfig,
+                              headerButton1Target: e.target.value as '_self' | '_blank',
+                            })
+                          }
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-800 focus:outline-hidden"
+                        >
+                          <option value="_self">Cùng Tab (_self)</option>
+                          <option value="_blank">Tab Mới (_blank)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-700 block mb-1 flex items-center justify-between">
+                          <span>SEO Rel</span>
+                          {(themeConfig.headerButton1Rel ?? 'nofollow').includes('nofollow') && (
+                            <span className="text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1 rounded-xs">Nofollow</span>
+                          )}
+                        </label>
+                        <select
+                          value={themeConfig.headerButton1Rel ?? 'nofollow'}
+                          onChange={(e) =>
+                            onChangeThemeConfig({
+                              ...themeConfig,
+                              headerButton1Rel: e.target.value,
+                            })
+                          }
+                          className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-800 focus:outline-hidden"
+                        >
+                          <option value="nofollow">Nofollow (Khuyên dùng)</option>
+                          <option value="">Dofollow (Mặc định)</option>
+                          <option value="nofollow noopener noreferrer">Nofollow + Noopener</option>
+                          <option value="sponsored nofollow">Sponsored + Nofollow</option>
+                        </select>
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-700 block mb-1">Đường Dẫn (URL/Link)</label>
-                      <input
-                        type="text"
-                        value={themeConfig.headerButton1Link || '#register'}
-                        onChange={(e) =>
-                          onChangeThemeConfig({ ...themeConfig, headerButton1Link: e.target.value })
-                        }
-                        placeholder="#register hoặc https://..."
-                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-mono font-medium text-slate-900 focus:outline-hidden"
-                      />
-                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-700 block mb-1">Màu Nút (Color)</label>
+                        <select
+                          value={themeConfig.headerButton1Color || 'alert'}
+                          onChange={(e) =>
+                            onChangeThemeConfig({
+                              ...themeConfig,
+                              headerButton1Color: e.target.value as any,
+                            })
+                          }
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-800 focus:outline-hidden"
+                        >
+                          <option value="alert">Alert (Đỏ Nổi Bật - Chuẩn Juega365)</option>
+                          <option value="primary">Primary (Màu Chủ Đạo Website)</option>
+                          <option value="secondary">Secondary (Màu Phụ / Điểm Nhấn)</option>
+                          <option value="success">Success (Xanh Lá Cây)</option>
+                          <option value="white">White (Nền Trắng)</option>
+                          <option value="plain">Plain (Mờ Tối Giản)</option>
+                        </select>
+                      </div>
 
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-700 block mb-1">Màu Nút (Color)</label>
-                      <select
-                        value={themeConfig.headerButton1Color || 'alert'}
-                        onChange={(e) =>
-                          onChangeThemeConfig({
-                            ...themeConfig,
-                            headerButton1Color: e.target.value as any,
-                          })
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-800 focus:outline-hidden"
-                      >
-                        <option value="alert">Alert (Đỏ Nổi Bật - Chuẩn Juega365)</option>
-                        <option value="primary">Primary (Màu Chủ Đạo Website)</option>
-                        <option value="secondary">Secondary (Màu Phụ / Điểm Nhấn)</option>
-                        <option value="success">Success (Xanh Lá Cây)</option>
-                        <option value="white">White (Nền Trắng)</option>
-                        <option value="plain">Plain (Mờ Tối Giản)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-700 block mb-1">Bo Góc (Radius)</label>
-                      <select
-                        value={themeConfig.headerButton1Radius || '99px'}
-                        onChange={(e) =>
-                          onChangeThemeConfig({ ...themeConfig, headerButton1Radius: e.target.value })
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-800 focus:outline-hidden"
-                      >
-                        <option value="99px">99px (Tròn Viên Thuốc - Pill)</option>
-                        <option value="8px">8px (Bo Góc Vừa)</option>
-                        <option value="4px">4px (Bo Góc Nhẹ)</option>
-                        <option value="0px">0px (Vuông Vức)</option>
-                      </select>
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-700 block mb-1">Bo Góc (Radius)</label>
+                        <select
+                          value={themeConfig.headerButton1Radius || '99px'}
+                          onChange={(e) =>
+                            onChangeThemeConfig({ ...themeConfig, headerButton1Radius: e.target.value })
+                          }
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-800 focus:outline-hidden"
+                        >
+                          <option value="99px">99px (Tròn Viên Thuốc - Pill)</option>
+                          <option value="8px">8px (Bo Góc Vừa)</option>
+                          <option value="4px">4px (Bo Góc Nhẹ)</option>
+                          <option value="0px">0px (Vuông Vức)</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1791,68 +1838,113 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
                 </div>
 
                 {themeConfig.headerButton2Show && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-700 block mb-1">Tiêu Đề Nút 2</label>
-                      <input
-                        type="text"
-                        value={themeConfig.headerButton2Text || 'ENTRAR'}
-                        onChange={(e) =>
-                          onChangeThemeConfig({ ...themeConfig, headerButton2Text: e.target.value })
-                        }
-                        placeholder="ENTRAR hoặc Đăng Nhập"
-                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-900 focus:outline-hidden"
-                      />
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-700 block mb-1">Tiêu Đề Nút 2</label>
+                        <input
+                          type="text"
+                          value={themeConfig.headerButton2Text || 'ENTRAR'}
+                          onChange={(e) =>
+                            onChangeThemeConfig({ ...themeConfig, headerButton2Text: e.target.value })
+                          }
+                          placeholder="ENTRAR hoặc Đăng Nhập"
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-900 focus:outline-hidden"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-700 block mb-1">Đường Dẫn (URL/Link)</label>
+                        <input
+                          type="text"
+                          value={themeConfig.headerButton2Link || '#login'}
+                          onChange={(e) =>
+                            onChangeThemeConfig({ ...themeConfig, headerButton2Link: e.target.value })
+                          }
+                          placeholder="#login hoặc https://..."
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-mono font-medium text-slate-900 focus:outline-hidden"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-700 block mb-1">Mở Tab</label>
+                        <select
+                          value={themeConfig.headerButton2Target || '_self'}
+                          onChange={(e) =>
+                            onChangeThemeConfig({
+                              ...themeConfig,
+                              headerButton2Target: e.target.value as '_self' | '_blank',
+                            })
+                          }
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-800 focus:outline-hidden"
+                        >
+                          <option value="_self">Cùng Tab (_self)</option>
+                          <option value="_blank">Tab Mới (_blank)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-700 block mb-1 flex items-center justify-between">
+                          <span>SEO Rel</span>
+                          {(themeConfig.headerButton2Rel ?? 'nofollow').includes('nofollow') && (
+                            <span className="text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1 rounded-xs">Nofollow</span>
+                          )}
+                        </label>
+                        <select
+                          value={themeConfig.headerButton2Rel ?? 'nofollow'}
+                          onChange={(e) =>
+                            onChangeThemeConfig({
+                              ...themeConfig,
+                              headerButton2Rel: e.target.value,
+                            })
+                          }
+                          className="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-800 focus:outline-hidden"
+                        >
+                          <option value="nofollow">Nofollow (Khuyên dùng)</option>
+                          <option value="">Dofollow (Mặc định)</option>
+                          <option value="nofollow noopener noreferrer">Nofollow + Noopener</option>
+                          <option value="sponsored nofollow">Sponsored + Nofollow</option>
+                        </select>
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-700 block mb-1">Đường Dẫn (URL/Link)</label>
-                      <input
-                        type="text"
-                        value={themeConfig.headerButton2Link || '#login'}
-                        onChange={(e) =>
-                          onChangeThemeConfig({ ...themeConfig, headerButton2Link: e.target.value })
-                        }
-                        placeholder="#login hoặc https://..."
-                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-mono font-medium text-slate-900 focus:outline-hidden"
-                      />
-                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-700 block mb-1">Màu Nút (Color)</label>
+                        <select
+                          value={themeConfig.headerButton2Color || 'alert'}
+                          onChange={(e) =>
+                            onChangeThemeConfig({
+                              ...themeConfig,
+                              headerButton2Color: e.target.value as any,
+                            })
+                          }
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-800 focus:outline-hidden"
+                        >
+                          <option value="alert">Alert (Đỏ Nổi Bật - Chuẩn Juega365)</option>
+                          <option value="primary">Primary (Màu Chủ Đạo Website)</option>
+                          <option value="secondary">Secondary (Màu Phụ / Điểm Nhấn)</option>
+                          <option value="success">Success (Xanh Lá Cây)</option>
+                          <option value="white">White (Nền Trắng)</option>
+                          <option value="plain">Plain (Mờ Tối Giản)</option>
+                        </select>
+                      </div>
 
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-700 block mb-1">Màu Nút (Color)</label>
-                      <select
-                        value={themeConfig.headerButton2Color || 'alert'}
-                        onChange={(e) =>
-                          onChangeThemeConfig({
-                            ...themeConfig,
-                            headerButton2Color: e.target.value as any,
-                          })
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-800 focus:outline-hidden"
-                      >
-                        <option value="alert">Alert (Đỏ Nổi Bật - Chuẩn Juega365)</option>
-                        <option value="primary">Primary (Màu Chủ Đạo Website)</option>
-                        <option value="secondary">Secondary (Màu Phụ / Điểm Nhấn)</option>
-                        <option value="success">Success (Xanh Lá Cây)</option>
-                        <option value="white">White (Nền Trắng)</option>
-                        <option value="plain">Plain (Mờ Tối Giản)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-700 block mb-1">Bo Góc (Radius)</label>
-                      <select
-                        value={themeConfig.headerButton2Radius || '99px'}
-                        onChange={(e) =>
-                          onChangeThemeConfig({ ...themeConfig, headerButton2Radius: e.target.value })
-                        }
-                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-800 focus:outline-hidden"
-                      >
-                        <option value="99px">99px (Tròn Viên Thuốc - Pill)</option>
-                        <option value="8px">8px (Bo Góc Vừa)</option>
-                        <option value="4px">4px (Bo Góc Nhẹ)</option>
-                        <option value="0px">0px (Vuông Vức)</option>
-                      </select>
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-700 block mb-1">Bo Góc (Radius)</label>
+                        <select
+                          value={themeConfig.headerButton2Radius || '99px'}
+                          onChange={(e) =>
+                            onChangeThemeConfig({ ...themeConfig, headerButton2Radius: e.target.value })
+                          }
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-800 focus:outline-hidden"
+                        >
+                          <option value="99px">99px (Tròn Viên Thuốc - Pill)</option>
+                          <option value="8px">8px (Bo Góc Vừa)</option>
+                          <option value="4px">4px (Bo Góc Nhẹ)</option>
+                          <option value="0px">0px (Vuông Vức)</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                 )}
