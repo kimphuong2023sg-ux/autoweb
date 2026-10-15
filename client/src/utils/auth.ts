@@ -111,13 +111,29 @@ export function clearAuth(scope: AuthScope = 'auto'): void {
   removeUser(scope);
 }
 
-export const API_BASE_URL = ((import.meta as any).env?.VITE_API_URL || '').replace(/\/+$/, '');
+export const getApiBaseUrl = (): string => {
+  const envApi = ((import.meta as any).env?.VITE_API_URL || '').replace(/\/+$/, '');
+  if (envApi) return envApi;
+
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host.includes('toolseo.uk') || (host !== 'localhost' && host !== '127.0.0.1')) {
+      return 'https://apiauto.toolseo.uk';
+    }
+  }
+
+  const envServer = ((import.meta as any).env?.VITE_SERVER_URL || '').replace(/\/+$/, '');
+  return envServer || '';
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 export function getApiUrl(url = ''): string {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   const path = url.startsWith('/') ? url : `/${url}`;
-  return API_BASE_URL ? `${API_BASE_URL}${path}` : path;
+  const base = getApiBaseUrl();
+  return base ? `${base}${path}` : path;
 }
 
 export async function authFetch(url: string, options: RequestInit = {}, scope: AuthScope = 'auto'): Promise<Response> {

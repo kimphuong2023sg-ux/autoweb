@@ -1,6 +1,7 @@
 import { ConnectedSite, ThemeConfig, FooterConfig, SectionItem, SeoEssentialsConfig, SubpageStylingConfig } from '../types';
+import { getApiUrl } from '../utils/auth';
 
-const API_BASE = '/api';
+const API_BASE = getApiUrl('/api');
 
 export const api = {
   getAuthPayload(site: ConnectedSite) {
