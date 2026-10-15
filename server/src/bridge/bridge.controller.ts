@@ -112,6 +112,12 @@ export class BridgeController {
     return this.bridgeService.autoInstallPlugin(body.siteUrl, this.extractAuth(body));
   }
 
+  @Post('install-flatsome-theme')
+  async installFlatsomeTheme(@Body() body: AuthBody) {
+    this.validateCredentials(body);
+    return this.bridgeService.installFlatsomeTheme(body.siteUrl, this.extractAuth(body));
+  }
+
   @Post('push-plugin-code')
   async pushPluginCode(@Body() body: AuthBody) {
     this.validateCredentials(body);
@@ -172,6 +178,31 @@ export class BridgeController {
       title: body.title,
       caption: body.caption,
       description: body.description,
+    });
+  }
+
+  @Post('set-favicon')
+  async setFavicon(
+    @Body()
+    body: AuthBody & {
+      mediaId?: number;
+      media_id?: number;
+      fileData?: string;
+      imageUrl?: string;
+      filename?: string;
+      remove?: boolean;
+    },
+  ) {
+    this.validateCredentials(body);
+    return this.bridgeService.setFavicon(body.siteUrl, this.extractAuth(body), {
+      media_id: body.mediaId || body.media_id,
+      mediaId: body.mediaId || body.media_id,
+      file_data: body.fileData,
+      fileData: body.fileData,
+      image_url: body.imageUrl,
+      imageUrl: body.imageUrl,
+      filename: body.filename,
+      remove: body.remove,
     });
   }
 
@@ -237,5 +268,16 @@ export class BridgeController {
       locations: body.locations,
       styling: body.styling,
     });
+  }
+
+  @Post('save-subpage-styling')
+  async saveSubpageStyling(
+    @Body()
+    body: AuthBody & {
+      styling: any;
+    },
+  ) {
+    this.validateCredentials(body);
+    return this.bridgeService.saveSubpageStyling(body.siteUrl, this.extractAuth(body), body.styling);
   }
 }

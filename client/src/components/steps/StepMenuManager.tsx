@@ -171,41 +171,19 @@ export const consolidateAndPinHome = (items: MenuItem[], siteUrl?: string): Menu
     };
   }
 
-  // Deduplicate other items: LOẠI BỎ TRIỆT ĐỂ BẤT KỲ MỤC NÀO TRÙNG LẶP HOẶC LÀ TRANG CHỦ
-  const seenUrls = new Set<string>();
-  const seenObjIds = new Set<string>();
-  const seenTitles = new Set<string>();
-
-  seenUrls.add(cleanUrl(cleanSiteUrl));
-  seenUrls.add('/');
-  seenUrls.add('');
-  seenTitles.add('trang chu');
-  seenTitles.add('home');
-  seenTitles.add('inicio');
-
+  // Deduplicate other items: Chỉ loại bỏ nếu trùng client_id hoặc vô tình là Trang Chủ thừa
+  const seenClientIds = new Set<string>();
   const deduplicatedOthers: MenuItem[] = [];
+
   for (const item of otherItems) {
     if (isHomeItem(item, siteUrl)) {
       continue;
     }
-
-    const itemUrl = cleanUrl(item.url);
-    const objKey = item.object && item.object_id ? `${item.object}_${item.object_id}` : null;
-    const titleKey = cleanText(item.title);
-
-    if (itemUrl && seenUrls.has(itemUrl)) {
+    const cId = item.client_id || `item_${item.order}_${item.title}_${item.url}`;
+    if (seenClientIds.has(cId)) {
       continue;
     }
-    if (objKey && seenObjIds.has(objKey)) {
-      continue;
-    }
-    if (titleKey && seenTitles.has(titleKey)) {
-      continue;
-    }
-
-    if (itemUrl) seenUrls.add(itemUrl);
-    if (objKey) seenObjIds.add(objKey);
-    if (titleKey) seenTitles.add(titleKey);
+    seenClientIds.add(cId);
     deduplicatedOthers.push(item);
   }
 
@@ -633,7 +611,7 @@ export const StepMenuManager: React.FC<StepMenuManagerProps> = ({
   // Add selected Pages to Menu
   const handleAddSelectedPages = () => {
     const toAdd = pages
-      .filter((p) => selectedPages.includes(p.id))
+      .filter((p) => selectedPages.some((id) => String(id) === String(p.id)))
       .filter((p) => !isHomePage(p, currentSite?.siteUrl));
 
     if (toAdd.length === 0) {
@@ -644,62 +622,74 @@ export const StepMenuManager: React.FC<StepMenuManagerProps> = ({
       return;
     }
 
-    const newItems: MenuItem[] = toAdd.map((p, idx) => ({
-      client_id: `page_${p.id}_${Date.now()}_${idx}`,
-      title: p.title || 'Trang',
-      url: p.slug === '/' ? '/' : p.url || `/${p.slug.replace(/^\//, '')}`,
-      slug: p.slug,
-      type: 'post_type',
-      object: 'page',
-      object_id: p.id,
-      parent_client_id: null,
-      order: menuItems.length + idx + 1,
-    }));
+    const newItems: MenuItem[] = toAdd.map((p, idx) => {
+      const cleanSlug = p.slug ? p.slug.toString().replace(/^\//, '') : '';
+      return {
+        client_id: `page_${p.id}_${Date.now()}_${idx}`,
+        title: p.title || 'Trang',
+        url: p.slug === '/' ? '/' : p.url || (cleanSlug ? `/${cleanSlug}` : '/'),
+        slug: p.slug || '',
+        type: 'post_type',
+        object: 'page',
+        object_id: p.id,
+        parent_client_id: null,
+        order: menuItems.length + idx + 1,
+      };
+    });
 
     setMenuItems((prev) => consolidateAndPinHome([...prev, ...newItems], currentSite?.siteUrl));
     setSelectedPages([]);
+    setRightTab('structure');
   };
 
   // Add selected Categories to Menu
   const handleAddSelectedCats = () => {
-    const toAdd = categories.filter((c) => selectedCats.includes(c.id));
+    const toAdd = categories.filter((c) => selectedCats.some((id) => String(id) === String(c.id)));
     if (toAdd.length === 0) return;
 
-    const newItems: MenuItem[] = toAdd.map((c, idx) => ({
-      client_id: `cat_${c.id}_${Date.now()}_${idx}`,
-      title: c.title || 'Chuyên mục',
-      url: c.url || `/category${c.slug}`,
-      slug: c.slug,
-      type: 'taxonomy',
-      object: 'category',
-      object_id: c.id,
-      parent_client_id: null,
-      order: menuItems.length + idx + 1,
-    }));
+    const newItems: MenuItem[] = toAdd.map((c, idx) => {
+      const cleanSlug = c.slug ? c.slug.toString().replace(/^\//, '') : '';
+      return {
+        client_id: `cat_${c.id}_${Date.now()}_${idx}`,
+        title: c.title || 'Chuyên mục',
+        url: c.url || `/category/${cleanSlug}`,
+        slug: c.slug || '',
+        type: 'taxonomy',
+        object: 'category',
+        object_id: c.id,
+        parent_client_id: null,
+        order: menuItems.length + idx + 1,
+      };
+    });
 
     setMenuItems((prev) => consolidateAndPinHome([...prev, ...newItems], currentSite?.siteUrl));
     setSelectedCats([]);
+    setRightTab('structure');
   };
 
   // Add selected Posts to Menu
   const handleAddSelectedPosts = () => {
-    const toAdd = posts.filter((p) => selectedPosts.includes(p.id));
+    const toAdd = posts.filter((p) => selectedPosts.some((id) => String(id) === String(p.id)));
     if (toAdd.length === 0) return;
 
-    const newItems: MenuItem[] = toAdd.map((p, idx) => ({
-      client_id: `post_${p.id}_${Date.now()}_${idx}`,
-      title: p.title || 'Bài viết',
-      url: p.url || `/${p.slug.replace(/^\//, '')}`,
-      slug: p.slug,
-      type: 'post_type',
-      object: 'post',
-      object_id: p.id,
-      parent_client_id: null,
-      order: menuItems.length + idx + 1,
-    }));
+    const newItems: MenuItem[] = toAdd.map((p, idx) => {
+      const cleanSlug = p.slug ? p.slug.toString().replace(/^\//, '') : '';
+      return {
+        client_id: `post_${p.id}_${Date.now()}_${idx}`,
+        title: p.title || 'Bài viết',
+        url: p.url || (cleanSlug ? `/${cleanSlug}` : '/'),
+        slug: p.slug || '',
+        type: 'post_type',
+        object: 'post',
+        object_id: p.id,
+        parent_client_id: null,
+        order: menuItems.length + idx + 1,
+      };
+    });
 
     setMenuItems((prev) => consolidateAndPinHome([...prev, ...newItems], currentSite?.siteUrl));
     setSelectedPosts([]);
+    setRightTab('structure');
   };
 
   // Add Custom Link to Menu
@@ -1174,15 +1164,26 @@ export const StepMenuManager: React.FC<StepMenuManagerProps> = ({
             {/* Tab 1: Pages */}
             {activeTab === 'pages' && (
               <div className="p-3 space-y-2.5">
-                <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={pageSearch}
-                    onChange={(e) => setPageSearch(e.target.value)}
-                    placeholder="Tìm tên trang hoặc đường dẫn..."
-                    className="w-full pl-8 pr-2 py-1 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-hidden"
-                  />
+                <div className="flex items-center gap-1.5">
+                  <div className="relative flex-1">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={pageSearch}
+                      onChange={(e) => setPageSearch(e.target.value)}
+                      placeholder="Tìm tên trang hoặc đường dẫn..."
+                      className="w-full pl-8 pr-2 py-1 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-hidden"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={loadInitialData}
+                    disabled={isLoading}
+                    title="Tải lại toàn bộ Trang từ WordPress"
+                    className="p-1.5 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-md border border-blue-200 transition cursor-pointer shrink-0"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                  </button>
                 </div>
 
                 <div className="max-h-48 overflow-y-auto space-y-1 divide-y divide-slate-100 border border-slate-100 rounded-lg p-1">
@@ -1193,12 +1194,22 @@ export const StepMenuManager: React.FC<StepMenuManagerProps> = ({
                   ) : (
                     filteredPages.map((p) => {
                       const isHome = isHomePage(p, currentSite?.siteUrl);
+                      const isAlreadyAdded = menuItems.some((m) => {
+                        const pUrl = cleanUrl(p.url || p.slug);
+                        const mUrl = cleanUrl(m.url || m.slug);
+                        const mObjKey = m.object && m.object_id ? `${m.object}_${m.object_id}` : null;
+                        const pObjKey = `page_${p.id}`;
+                        return (pUrl && mUrl === pUrl) || (mObjKey && mObjKey === pObjKey) || cleanText(m.title) === cleanText(p.title);
+                      });
+
                       return (
                         <label
                           key={p.id}
                           className={`flex items-center gap-2 p-1.5 rounded text-xs transition ${
                             isHome
                               ? 'bg-blue-50/60 text-slate-500 cursor-not-allowed border border-blue-100'
+                              : isAlreadyAdded
+                              ? 'bg-blue-50/30 hover:bg-blue-50/60 cursor-pointer'
                               : 'hover:bg-blue-50/50 cursor-pointer'
                           }`}
                         >
@@ -1222,6 +1233,10 @@ export const StepMenuManager: React.FC<StepMenuManagerProps> = ({
                           {isHome ? (
                             <span className="text-[10px] text-blue-700 font-bold bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 shrink-0">
                               📍 Đã neo ở đầu
+                            </span>
+                          ) : isAlreadyAdded ? (
+                            <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 font-bold shrink-0">
+                              ✓ Đã có
                             </span>
                           ) : (
                             <span className="text-[10px] text-slate-400 font-mono shrink-0 truncate max-w-24">
@@ -1266,15 +1281,26 @@ export const StepMenuManager: React.FC<StepMenuManagerProps> = ({
             {/* Tab: Posts */}
             {activeTab === 'posts' && (
               <div className="p-3 space-y-2.5">
-                <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={postSearch}
-                    onChange={(e) => setPostSearch(e.target.value)}
-                    placeholder="Tìm tiêu đề bài viết hoặc slug..."
-                    className="w-full pl-8 pr-2 py-1 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-hidden"
-                  />
+                <div className="flex items-center gap-1.5">
+                  <div className="relative flex-1">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={postSearch}
+                      onChange={(e) => setPostSearch(e.target.value)}
+                      placeholder="Tìm tiêu đề bài viết hoặc slug..."
+                      className="w-full pl-8 pr-2 py-1 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-hidden"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={loadInitialData}
+                    disabled={isLoading}
+                    title="Tải lại toàn bộ Bài viết từ WordPress"
+                    className="p-1.5 text-purple-600 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 rounded-md border border-purple-200 transition cursor-pointer shrink-0"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                  </button>
                 </div>
 
                 <div className="max-h-52 overflow-y-auto space-y-1 divide-y divide-slate-100 border border-slate-100 rounded-lg p-1">
@@ -1283,29 +1309,46 @@ export const StepMenuManager: React.FC<StepMenuManagerProps> = ({
                       {posts.length === 0 ? 'Chưa có bài viết nào trên website' : 'Không tìm thấy bài viết phù hợp'}
                     </p>
                   ) : (
-                    filteredPosts.map((p) => (
-                      <label
-                        key={p.id}
-                        className="flex items-center gap-2 p-1.5 hover:bg-purple-50/50 rounded cursor-pointer text-xs"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedPosts.includes(p.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedPosts((prev) => [...prev, p.id]);
-                            } else {
-                              setSelectedPosts((prev) => prev.filter((id) => id !== p.id));
-                            }
-                          }}
-                          className="rounded text-purple-600 focus:ring-0"
-                        />
-                        <span className="font-medium text-slate-800 truncate flex-1">{p.title}</span>
-                        <span className="text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 font-mono shrink-0 truncate max-w-28">
-                          {p.slug}
-                        </span>
-                      </label>
-                    ))
+                    filteredPosts.map((p) => {
+                      const isAlreadyAdded = menuItems.some((m) => {
+                        const pUrl = cleanUrl(p.url || p.slug);
+                        const mUrl = cleanUrl(m.url || m.slug);
+                        const mObjKey = m.object && m.object_id ? `${m.object}_${m.object_id}` : null;
+                        const pObjKey = `post_${p.id}`;
+                        return (pUrl && mUrl === pUrl) || (mObjKey && mObjKey === pObjKey) || cleanText(m.title) === cleanText(p.title);
+                      });
+
+                      return (
+                        <label
+                          key={p.id}
+                          className={`flex items-center gap-2 p-1.5 rounded cursor-pointer text-xs transition ${
+                            isAlreadyAdded ? 'bg-purple-50/40 hover:bg-purple-50/70' : 'hover:bg-purple-50/50'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedPosts.includes(p.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedPosts((prev) => [...prev, p.id]);
+                              } else {
+                                setSelectedPosts((prev) => prev.filter((id) => id !== p.id));
+                              }
+                            }}
+                            className="rounded text-purple-600 focus:ring-0"
+                          />
+                          <span className="font-medium text-slate-800 truncate flex-1">{p.title}</span>
+                          {isAlreadyAdded && (
+                            <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 font-bold shrink-0">
+                              ✓ Đã có
+                            </span>
+                          )}
+                          <span className="text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 font-mono shrink-0 truncate max-w-28">
+                            {p.slug}
+                          </span>
+                        </label>
+                      );
+                    })
                   )}
                 </div>
 
@@ -1338,15 +1381,26 @@ export const StepMenuManager: React.FC<StepMenuManagerProps> = ({
             {/* Tab 2: Categories */}
             {activeTab === 'categories' && (
               <div className="p-3 space-y-2.5">
-                <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={catSearch}
-                    onChange={(e) => setCatSearch(e.target.value)}
-                    placeholder="Tìm chuyên mục..."
-                    className="w-full pl-8 pr-2 py-1 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-hidden"
-                  />
+                <div className="flex items-center gap-1.5">
+                  <div className="relative flex-1">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={catSearch}
+                      onChange={(e) => setCatSearch(e.target.value)}
+                      placeholder="Tìm chuyên mục..."
+                      className="w-full pl-8 pr-2 py-1 text-xs bg-slate-50 border border-slate-200 rounded-md focus:bg-white focus:outline-hidden"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={loadInitialData}
+                    disabled={isLoading}
+                    title="Tải lại toàn bộ Chuyên mục từ WordPress"
+                    className="p-1.5 text-amber-600 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 rounded-md border border-amber-200 transition cursor-pointer shrink-0"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                  </button>
                 </div>
 
                 <div className="max-h-48 overflow-y-auto space-y-1 divide-y divide-slate-100 border border-slate-100 rounded-lg p-1">
@@ -1355,29 +1409,46 @@ export const StepMenuManager: React.FC<StepMenuManagerProps> = ({
                       {categories.length === 0 ? 'Đang tải chuyên mục...' : 'Không tìm thấy chuyên mục'}
                     </p>
                   ) : (
-                    filteredCats.map((c) => (
-                      <label
-                        key={c.id}
-                        className="flex items-center gap-2 p-1.5 hover:bg-blue-50/50 rounded cursor-pointer text-xs"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedCats.includes(c.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedCats((prev) => [...prev, c.id]);
-                            } else {
-                              setSelectedCats((prev) => prev.filter((id) => id !== c.id));
-                            }
-                          }}
-                          className="rounded text-blue-600 focus:ring-0"
-                        />
-                        <span className="font-medium text-slate-800 truncate flex-1">{c.title}</span>
-                        <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 font-mono shrink-0">
-                          {c.slug}
-                        </span>
-                      </label>
-                    ))
+                    filteredCats.map((c) => {
+                      const isAlreadyAdded = menuItems.some((m) => {
+                        const cUrl = cleanUrl(c.url || c.slug);
+                        const mUrl = cleanUrl(m.url || m.slug);
+                        const mObjKey = m.object && m.object_id ? `${m.object}_${m.object_id}` : null;
+                        const cObjKey = `category_${c.id}`;
+                        return (cUrl && mUrl === cUrl) || (mObjKey && mObjKey === cObjKey) || cleanText(m.title) === cleanText(c.title);
+                      });
+
+                      return (
+                        <label
+                          key={c.id}
+                          className={`flex items-center gap-2 p-1.5 rounded cursor-pointer text-xs transition ${
+                            isAlreadyAdded ? 'bg-amber-50/40 hover:bg-amber-50/70' : 'hover:bg-blue-50/50'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedCats.includes(c.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedCats((prev) => [...prev, c.id]);
+                              } else {
+                                setSelectedCats((prev) => prev.filter((id) => id !== c.id));
+                              }
+                            }}
+                            className="rounded text-blue-600 focus:ring-0"
+                          />
+                          <span className="font-medium text-slate-800 truncate flex-1">{c.title}</span>
+                          {isAlreadyAdded && (
+                            <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 font-bold shrink-0">
+                              ✓ Đã có
+                            </span>
+                          )}
+                          <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 font-mono shrink-0">
+                            {c.slug}
+                          </span>
+                        </label>
+                      );
+                    })
                   )}
                 </div>
 
@@ -3382,14 +3453,14 @@ export const StepMenuManager: React.FC<StepMenuManagerProps> = ({
           onClick={onPrevStep}
           className="px-5 py-2.5 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition cursor-pointer"
         >
-          ❮ Quay lại Bước 3 (Cấu Hình Theme)
+          ❮ Quay lại Bước 4 (Cài Đặt Nền Website)
         </button>
         <button
           type="button"
           onClick={onNextStep}
           className="px-6 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer"
         >
-          <span>Tiếp tục sang Dựng Trang Chủ (Bước 5)</span>
+          <span>Tiếp tục sang Dựng Trang Chủ (Bước 6)</span>
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>

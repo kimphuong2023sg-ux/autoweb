@@ -11,12 +11,13 @@ const common_1 = require("@nestjs/common");
 const bridge_module_1 = require("./bridge/bridge.module");
 const compiler_module_1 = require("./compiler/compiler.module");
 const templates_module_1 = require("./templates/templates.module");
+const auth_module_1 = require("./auth/auth.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [bridge_module_1.BridgeModule, compiler_module_1.CompilerModule, templates_module_1.TemplatesModule],
+        imports: [auth_module_1.AuthModule, bridge_module_1.BridgeModule, compiler_module_1.CompilerModule, templates_module_1.TemplatesModule],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

@@ -28,52 +28,148 @@
 }
 
 /* Button Animation Effects */
-.btn-anim-shimmer, .btn-anim-combo {
+.btn-anim-shimmer {
   position: relative !important;
   overflow: hidden !important;
+  z-index: 1 !important;
 }
-.btn-anim-shimmer::after, .btn-anim-combo::after {
+.btn-anim-shimmer::after {
   content: '' !important;
   position: absolute !important;
   top: 0 !important;
-  left: -100% !important;
-  width: 60% !important;
+  left: -120% !important;
+  width: 70% !important;
   height: 100% !important;
   background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.75) 50%, rgba(255,255,255,0) 100%) !important;
   transform: skewX(-25deg) !important;
-  animation: jglBtnShimmerSweep 2.8s infinite ease-in-out !important;
+  animation: jglBtnShimmerSweep 2.2s infinite ease-in-out !important;
   pointer-events: none !important;
+  z-index: 2 !important;
 }
 @keyframes jglBtnShimmerSweep {
-  0% { left: -100%; }
-  35%, 100% { left: 200%; }
+  0% { left: -120%; }
+  35%, 100% { left: 220%; }
 }
 
-.btn-anim-shake, .btn-anim-combo {
-  animation: jglBtnShakeNotice 3.5s infinite ease-in-out !important;
+.btn-anim-shake {
+  display: inline-block !important;
+  animation: jglBtnShakeNotice 2.2s infinite ease-in-out !important;
   transform-origin: center center !important;
 }
 @keyframes jglBtnShakeNotice {
-  0%, 75%, 100% { transform: scale(1) rotate(0deg); }
-  78% { transform: scale(1.06) rotate(-3.5deg); }
-  81% { transform: scale(1.06) rotate(3.5deg); }
-  84% { transform: scale(1.06) rotate(-3.5deg); }
-  87% { transform: scale(1.06) rotate(2deg); }
-  90% { transform: scale(1) rotate(0deg); }
+  0%, 65%, 100% { transform: scale(1) rotate(0deg); }
+  68% { transform: scale(1.08) rotate(-6deg); }
+  72% { transform: scale(1.08) rotate(6deg); }
+  76% { transform: scale(1.08) rotate(-5deg); }
+  80% { transform: scale(1.08) rotate(4deg); }
+  84% { transform: scale(1.04) rotate(-2deg); }
+  88% { transform: scale(1) rotate(0deg); }
 }
 
-.btn-anim-pulse {
-  animation: jglBtnHeartPulse 2s infinite ease-in-out !important;
+.btn-anim-ripple {
+  position: relative !important;
+  overflow: visible !important;
+  z-index: 1 !important;
+  animation: jglBtnRipplePulse 2s infinite ease-in-out !important;
 }
-@keyframes jglBtnHeartPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); }
+.btn-anim-ripple::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  border-radius: inherit !important;
+  background: inherit !important;
+  border: 2px solid currentColor !important;
+  opacity: 0.75 !important;
+  animation: jglBtnRippleRing 1.8s infinite cubic-bezier(0.24, 0, 0.38, 1) !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+.btn-anim-ripple::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  border-radius: inherit !important;
+  background: inherit !important;
+  border: 1.5px solid currentColor !important;
+  opacity: 0.75 !important;
+  animation: jglBtnRippleRing 1.8s infinite cubic-bezier(0.24, 0, 0.38, 1) 0.9s !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+@keyframes jglBtnRippleRing {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.38, 1.48); opacity: 0; }
+}
+@keyframes jglBtnRipplePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.2); }
+  50% { box-shadow: 0 0 16px 2px rgba(255, 255, 255, 0.8), 0 0 20px 4px currentColor; }
 }
 
 .btn-anim-glow {
-  animation: jglBtnGlowPulse 2.2s infinite ease-in-out !important;
+  animation: jglBtnGlowPulse 1.8s infinite ease-in-out !important;
 }
 @keyframes jglBtnGlowPulse {
-  0%, 100% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.4), 0 0 10px currentColor; }
-  50% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px currentColor; }
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(255, 120, 0, 0.4), 0 0 12px currentColor;
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(255, 120, 0, 0.9), 0 0 38px currentColor, 0 0 50px rgba(255, 255, 255, 0.8);
+    transform: scale(1.05);
+  }
+}
+
+.btn-anim-pulse {
+  display: inline-block !important;
+  animation: jglBtnHeartPulse 1.6s infinite ease-in-out !important;
+  transform-origin: center center !important;
+}
+@keyframes jglBtnHeartPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
+}
+
+.btn-anim-combo {
+  display: inline-block !important;
+  position: relative !important;
+  overflow: visible !important;
+  z-index: 1 !important;
+  animation: jglBtnShakeNotice 2.2s infinite ease-in-out !important;
+  transform-origin: center center !important;
+}
+.btn-anim-combo::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  border-radius: inherit !important;
+  background: inherit !important;
+  border: 2px solid currentColor !important;
+  opacity: 0.75 !important;
+  animation: jglBtnRippleRing 1.8s infinite cubic-bezier(0.24, 0, 0.38, 1) !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+.btn-anim-combo::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  border-radius: inherit !important;
+  background: inherit !important;
+  border: 1.5px solid currentColor !important;
+  opacity: 0.75 !important;
+  animation: jglBtnRippleRing 1.8s infinite cubic-bezier(0.24, 0, 0.38, 1) 0.9s !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
 }

@@ -41,9 +41,19 @@ import {
   Box,
   CheckSquare,
   Square,
+  Smartphone,
+  Monitor,
+  Pencil,
+  Check,
+  X,
+  Tag,
+  Sun,
+  Moon,
+  Palette,
 } from 'lucide-react';
 import { SectionItem, FlatsomeElementType, ColumnLayoutPreset, ConnectedSite, WpMediaItem } from '../../types';
 import { api } from '../../services/api';
+import { WpRichTextEditor } from '../common/WpRichTextEditor';
 
 interface Step3HomepageBuilderProps {
   currentSite?: ConnectedSite | null;
@@ -61,6 +71,398 @@ interface ElementDefinition {
   icon: string;
   defaultData: Partial<SectionItem>;
 }
+
+const parsePaddingTop = (padding?: string): number => {
+  if (!padding) return 60;
+  if (padding === 'none') return 0;
+  if (padding === '5px') return 5;
+  if (padding === 'tight') return 10;
+  if (padding === 'compact') return 15;
+  if (padding === '20px') return 20;
+  if (padding === 'small') return 35;
+  if (padding === 'normal') return 60;
+  if (padding === 'large') return 90;
+  const parts = padding.trim().split(/\s+/);
+  if (parts.length > 0) {
+    const val = parseInt(parts[0], 10);
+    return isNaN(val) ? 60 : val;
+  }
+  return 60;
+};
+
+const parsePaddingBottom = (padding?: string): number => {
+  if (!padding) return 60;
+  if (padding === 'none') return 0;
+  if (padding === '5px') return 5;
+  if (padding === 'tight') return 10;
+  if (padding === 'compact') return 15;
+  if (padding === '20px') return 20;
+  if (padding === 'small') return 35;
+  if (padding === 'normal') return 60;
+  if (padding === 'large') return 90;
+  const parts = padding.trim().split(/\s+/);
+  if (parts.length >= 3) {
+    const val = parseInt(parts[2], 10);
+    return isNaN(val) ? 60 : val;
+  } else if (parts.length > 0) {
+    const val = parseInt(parts[0], 10);
+    return isNaN(val) ? 60 : val;
+  }
+  return 60;
+};
+
+// --- 3 MẪU TRANG CHỦ ĐƠN GIẢN: BANNER + IMGBOX + MESSBOX + TEXT DEMO ---
+export interface HomepageTemplatePreset {
+  id: string;
+  name: string;
+  badge: string;
+  badgeColor: string;
+  description: string;
+  blocks: { icon: string; name: string; desc: string }[];
+  generateSections: () => SectionItem[];
+}
+
+export const HOMEPAGE_TEMPLATES: HomepageTemplatePreset[] = [
+  {
+    id: 'template-seo-standard',
+    name: 'Mẫu 1: Doanh Nghiệp & Dịch Vụ SEO',
+    badge: '⭐ Chuẩn SEO & Doanh Nghiệp',
+    badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-400/40',
+    description: 'Bố cục chuẩn mực giới thiệu năng lực thương hiệu, thông báo khuyến mãi và dịch vụ chuyên sâu.',
+    blocks: [
+      { icon: '🌄', name: 'Banner', desc: 'Banner giải pháp đột phá, H1 chuẩn SEO' },
+      { icon: '📢', name: 'MessBox', desc: 'Hộp ưu đãi & nút tư vấn trực tiếp' },
+      { icon: '🎴', name: 'ImgBox', desc: 'Lưới 3 ảnh dịch vụ nổi bật' },
+      { icon: '📝', name: 'Text Demo', desc: 'Văn bản cam kết chất lượng, danh sách tiện ích' },
+    ],
+    generateSections: (): SectionItem[] => {
+      const now = Date.now();
+      return [
+        {
+          id: `banner-${now}-1`,
+          type: 'banner',
+          title: 'GIẢI PHÁP ĐỘT PHÁ CHO DOANH NGHIỆP BẠN',
+          subtitle: 'Tối ưu hóa hiệu suất, nâng tầm thương hiệu với quy trình chuyên nghiệp và chuẩn SEO hàng đầu.',
+          buttonText: 'Khám Phá Dịch Vụ',
+          buttonLink: '#services',
+          bgColor: '#0f172a',
+          textColor: 'light',
+          padding: 'large',
+          data: {
+            imageUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1400&auto=format&fit=crop&q=80',
+            alt: 'Banner doanh nghiệp chuẩn SEO',
+          },
+        },
+        {
+          id: `message_box-${now}-2`,
+          type: 'message_box',
+          content: '🔥 Ưu đãi độc quyền: Tặng gói audit SEO Onpage & hỗ trợ cấu hình kỹ thuật miễn phí cho 30 khách hàng đăng ký sớm nhất!',
+          subtitle: '🔥 Ưu đãi độc quyền: Tặng gói audit SEO Onpage & hỗ trợ cấu hình kỹ thuật miễn phí cho 30 khách hàng đăng ký sớm nhất!',
+          bgColor: '#f59e0b',
+          textColor: 'dark',
+          padding: '20px',
+          data: {
+            wrapInSection: true,
+            boxLayout: 'inline',
+            buttonAlign: 'right',
+            icon: '🔥',
+            hasButton1: true,
+            button1Text: 'Nhận Ưu Đãi Ngay',
+            button1Link: '#contact',
+            button1Color: 'primary',
+            borderRadius: 12,
+            boxShadow: 'subtle',
+          },
+        },
+        {
+          id: `image_box-${now}-3`,
+          type: 'image_box',
+          title: 'Lĩnh Vực Hoạt Động & Dịch Vụ Nổi Bật',
+          subtitle: 'Hệ thống giải pháp đồng bộ đem lại hiệu quả tăng trưởng bền vững',
+          bgColor: '#f8fafc',
+          padding: 'normal',
+          layout: '3-col-equal',
+          data: {
+            items: [
+              {
+                title: 'Tối Ưu SEO & Content Marketing',
+                desc: 'Đưa từ khóa lên Top Google bền vững, gia tăng lượng truy cập tự nhiên.',
+                img: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80',
+                link: '#seo',
+              },
+              {
+                title: 'Thiết Kế Web Flatsome Cao Cấp',
+                desc: 'Giao diện hiện đại, tốc độ tải trang dưới 1s, chuẩn Core Web Vitals.',
+                img: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=600&auto=format&fit=crop&q=80',
+                link: '#web-design',
+              },
+              {
+                title: 'Hạ Tầng & Vận Hành Kỹ Thuật',
+                desc: 'Bảo mật đa tầng, chống DDoS và hỗ trợ vận hành 24/7 không gián đoạn.',
+                img: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=600&auto=format&fit=crop&q=80',
+                link: '#cloud-hosting',
+              },
+            ],
+          },
+        },
+        {
+          id: `text_block-${now}-4`,
+          type: 'text_block',
+          title: 'Giới Thiệu Thương Hiệu & Cam Kết Chất Lượng',
+          bgColor: '#ffffff',
+          padding: 'normal',
+          data: {
+            boxEnabled: true,
+            boxPreset: 'clean-border',
+            boxBgColor: '#ffffff',
+            boxTextColor: 'dark',
+            boxBorderWidth: 1.5,
+            boxBorderColor: '#e2e8f0',
+            boxBorderStyle: 'solid',
+            boxRadius: 14,
+            boxPadding: '24px 28px',
+            boxShadow: 'subtle',
+          },
+          content: `<h2>Chào Mừng Đến Với Hệ Thống Nền Tảng Dịch Vụ Đẳng Cấp</h2>
+<p>Chúng tôi tự hào là đơn vị tiên phong cung cấp giải pháp công nghệ và truyền thông số toàn diện. Với định hướng lấy chất lượng và sự hài lòng của đối tác làm kim chỉ nam, mỗi sản phẩm bàn giao đều được kiểm định khắt khe theo các tiêu chuẩn khắt khe nhất của Google.</p>
+<p><strong>Những cam kết chất lượng cốt lõi:</strong></p>
+<ul>
+  <li><strong>Hiệu năng vượt trội:</strong> Tối ưu mã nguồn sạch sẽ, không dư thừa tài nguyên, đạt điểm PageSpeed 90+.</li>
+  <li><strong>Bảo mật tối đa:</strong> Cơ chế mã hóa dữ liệu an toàn và hệ thống tường lửa chủ động.</li>
+  <li><strong>Đồng hành 24/7:</strong> Đội ngũ kỹ thuật viên luôn túc trực hỗ trợ giải đáp mọi lúc mọi nơi.</li>
+</ul>`,
+        },
+      ];
+    },
+  },
+  {
+    id: 'template-casino-entertainment',
+    name: 'Mẫu 2: Cổng Game & Giải Trí Luxury',
+    badge: '🎰 Casino & Game Luxury',
+    badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-400/40',
+    description: 'Giao diện bắt mắt dành cho sân chơi giải trí, thể thao và sòng bài với phong cách viền vàng đẳng cấp.',
+    blocks: [
+      { icon: '🌄', name: 'Banner', desc: 'Thưởng nạp 100%, nút Đăng Ký nổi bật' },
+      { icon: '🎴', name: 'ImgBox', desc: '3 sảnh game hot: Nổ Hũ, Casino, Thể Thao' },
+      { icon: '📢', name: 'MessBox', desc: 'Thông báo hoàn trả VIP & nhận thưởng' },
+      { icon: '📝', name: 'Text Demo', desc: 'Chính sách minh bạch khung viền vàng Gold Luxury' },
+    ],
+    generateSections: (): SectionItem[] => {
+      const now = Date.now();
+      return [
+        {
+          id: `banner-${now}-1`,
+          type: 'banner',
+          title: 'SÂN CHƠI ĐẲNG CẤP QUỐC TẾ - THƯỞNG NẠP 100%',
+          subtitle: 'Trải nghiệm hàng ngàn trò chơi nổ hũ, live casino và cá cược thể thao uy tín minh bạch số 1 Châu Á.',
+          buttonText: 'ĐĂNG KÝ THAM GIA',
+          buttonLink: '#register',
+          bgColor: '#090d16',
+          textColor: 'light',
+          padding: 'large',
+          data: {
+            imageUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=1400&auto=format&fit=crop&q=80',
+            alt: 'Banner Sân Chơi Quốc Tế',
+          },
+        },
+        {
+          id: `image_box-${now}-2`,
+          type: 'image_box',
+          title: 'Sảnh Trò Chơi Nổi Bật Được Yêu Thích Nhất',
+          subtitle: 'Khám phá thế giới giải trí đỉnh cao cùng tỷ lệ trả thưởng cực khủng',
+          bgColor: '#0b0f19',
+          textColor: 'light',
+          padding: 'normal',
+          layout: '3-col-equal',
+          data: {
+            items: [
+              {
+                title: '🎰 Nổ Hũ Slots Jackpot',
+                desc: 'Hàng trăm hũ vàng nổ liên tục mỗi ngày cùng đồ họa 3D sống động.',
+                img: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=600&auto=format&fit=crop&q=80',
+                link: '#slots',
+              },
+              {
+                title: '🎲 Live Casino Trực Tuyến',
+                desc: 'Sòng bài trực tiếp cùng dàn Dealer xinh đẹp chuyên nghiệp chuẩn 5 sao.',
+                img: 'https://images.unsplash.com/photo-1511193311914-0346f16efe90?w=600&auto=format&fit=crop&q=80',
+                link: '#casino',
+              },
+              {
+                title: '⚽ Cá Cược Thể Thao',
+                desc: 'Đầy đủ các giải đấu Ngoại Hạng Anh, C1, World Cup với kèo cược tốt nhất.',
+                img: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=600&auto=format&fit=crop&q=80',
+                link: '#sports',
+              },
+            ],
+          },
+        },
+        {
+          id: `message_box-${now}-3`,
+          type: 'message_box',
+          content: '💎 Khuyến Mãi VIP Đặc Quyền: Hoàn trả không giới hạn lên đến 1.5% mỗi ngày + Thưởng nạp đầu 100% cho mọi tân thủ đăng ký hôm nay!',
+          subtitle: '💎 Khuyến Mãi VIP Đặc Quyền: Hoàn trả không giới hạn lên đến 1.5% mỗi ngày + Thưởng nạp đầu 100% cho mọi tân thủ đăng ký hôm nay!',
+          bgColor: '#dc2626',
+          textColor: 'dark',
+          padding: '20px',
+          data: {
+            wrapInSection: true,
+            boxLayout: 'inline',
+            buttonAlign: 'right',
+            icon: '🎁',
+            hasButton1: true,
+            button1Text: 'Nhận Khuyến Mãi',
+            button1Link: '#promo',
+            button1Color: 'alert',
+            borderRadius: 12,
+            boxShadow: 'subtle',
+          },
+        },
+        {
+          id: `text_block-${now}-4`,
+          type: 'text_block',
+          title: 'Hướng Dẫn Tham Gia & Giấy Phép Hoạt Động Minh Bạch',
+          bgColor: '#090d16',
+          textColor: 'light',
+          padding: 'normal',
+          data: {
+            boxEnabled: true,
+            boxPreset: 'gold-luxury',
+            boxBgColor: 'rgba(10, 15, 29, 0.95)',
+            boxTextColor: 'gold',
+            boxBorderWidth: 1.5,
+            boxBorderColor: '#f59e0b',
+            boxBorderStyle: 'solid',
+            boxRadius: 16,
+            boxPadding: '24px 28px',
+            boxShadow: 'glow-gold',
+            boxBackdropBlur: true,
+          },
+          content: `<h2>Chính Sách Hoạt Động & Cam Kết Minh Bạch</h2>
+<p>Cổng game hoạt động dưới sự giám sát nghiêm ngặt của tổ chức cấp phép quốc tế PAGCOR và Isle of Man. Mọi kết quả cá cược đều được vận hành bằng thuật toán ngẫu nhiên RNG đã qua kiểm định độc lập, đảm bảo tính công bằng tuyệt đối cho tất cả thành viên.</p>
+<p><strong>Ưu điểm khi đồng hành cùng chúng tôi:</strong></p>
+<ul>
+  <li><strong>Nạp rút siêu tốc:</strong> Tự động xử lý lệnh nạp rút chỉ từ 1 - 3 phút qua ngân hàng và ví điện tử.</li>
+  <li><strong>Bảo mật thông tin:</strong> Áp dụng công nghệ mã hóa SSL 256-bit chuẩn ngân hàng quốc tế.</li>
+  <li><strong>Hỗ trợ tận tâm:</strong> Kênh chat trực tuyến và hotline hoạt động liên tục 24/7.</li>
+</ul>`,
+        },
+      ];
+    },
+  },
+  {
+    id: 'template-minimal-announcement',
+    name: 'Mẫu 3: Thông Báo Đầu Trang & Tối Giản',
+    badge: '⚡ Hiện Đại & Thông Báo Đầu Trang',
+    badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40',
+    description: 'Thanh thông báo hotline & CSKH ngay đầu trang, tiếp nối bởi banner công nghệ và 3 giá trị cốt lõi.',
+    blocks: [
+      { icon: '📢', name: 'MessBox', desc: 'Thanh hotline CSKH 24/7 trên đầu trang' },
+      { icon: '🌄', name: 'Banner', desc: 'Banner công nghệ hiện đại, tương thích đa thiết bị' },
+      { icon: '🎴', name: 'ImgBox', desc: '3 khối giá trị cốt lõi: Tốc độ, Bảo mật, Hỗ trợ' },
+      { icon: '📝', name: 'Text Demo', desc: 'Tầm nhìn chiến lược và tiêu chuẩn vận hành' },
+    ],
+    generateSections: (): SectionItem[] => {
+      const now = Date.now();
+      return [
+        {
+          id: `message_box-${now}-1`,
+          type: 'message_box',
+          content: '📢 Hotline CSKH & Tư Vấn Kỹ Thuật 24/7: 1900 xxxx - Cam kết hỗ trợ nhiệt tình, giải quyết mọi thắc mắc tức thì!',
+          subtitle: '📢 Hotline CSKH & Tư Vấn Kỹ Thuật 24/7: 1900 xxxx - Cam kết hỗ trợ nhiệt tình, giải quyết mọi thắc mắc tức thì!',
+          bgColor: '#0f172a',
+          textColor: 'dark',
+          padding: '15px',
+          data: {
+            wrapInSection: true,
+            boxLayout: 'inline',
+            buttonAlign: 'right',
+            icon: '📢',
+            hasButton1: true,
+            button1Text: 'Gọi Tư Vấn',
+            button1Link: 'tel:1900xxxx',
+            button1Color: 'primary',
+            borderRadius: 10,
+            boxShadow: 'subtle',
+          },
+        },
+        {
+          id: `banner-${now}-2`,
+          type: 'banner',
+          title: 'KIẾN TẠO TƯƠNG LAI BỀN VỮNG VÀ KHÁC BIỆT',
+          subtitle: 'Cung cấp nền tảng vận hành tinh gọn, bảo mật cao và tương thích tối đa trên mọi thiết bị di động.',
+          buttonText: 'Tìm Hiểu Thêm',
+          buttonLink: '#about',
+          bgColor: '#1e1b4b',
+          textColor: 'light',
+          padding: 'large',
+          data: {
+            imageUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1400&auto=format&fit=crop&q=80',
+            alt: 'Banner Công Nghệ Bền Vững',
+          },
+        },
+        {
+          id: `image_box-${now}-3`,
+          type: 'image_box',
+          title: 'Giá Trị Cốt Lõi Của Nền Tảng',
+          subtitle: '3 trụ cột tạo nên uy tín và vị thế vững chắc trên thị trường',
+          bgColor: '#ffffff',
+          padding: 'normal',
+          layout: '3-col-equal',
+          data: {
+            items: [
+              {
+                title: 'Tốc Độ & Ổn Định',
+                desc: 'Thời gian phản hồi máy chủ dưới 200ms, đảm bảo trải nghiệm mượt mà không gián đoạn.',
+                img: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&auto=format&fit=crop&q=80',
+                link: '#speed',
+              },
+              {
+                title: 'Bảo Mật Tiên Tiến',
+                desc: 'Hệ thống tường lửa đa tầng và cơ chế phòng vệ tự động theo thời gian thực.',
+                img: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=600&auto=format&fit=crop&q=80',
+                link: '#security',
+              },
+              {
+                title: 'Hỗ Trợ Chuyên Nghiệp',
+                desc: 'Đội ngũ kỹ sư giàu kinh nghiệm sẵn sàng giải quyết mọi yêu cầu 24/7.',
+                img: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&auto=format&fit=crop&q=80',
+                link: '#support',
+              },
+            ],
+          },
+        },
+        {
+          id: `text_block-${now}-4`,
+          type: 'text_block',
+          title: 'Về Doanh Nghiệp & Tầm Nhìn Chiến Lược Dài Hạn',
+          bgColor: '#f8fafc',
+          padding: 'normal',
+          data: {
+            boxEnabled: true,
+            boxPreset: 'clean-border',
+            boxBgColor: '#ffffff',
+            boxTextColor: 'dark',
+            boxBorderWidth: 1,
+            boxBorderColor: '#cbd5e1',
+            boxBorderStyle: 'solid',
+            boxRadius: 12,
+            boxPadding: '20px 24px',
+            boxShadow: 'subtle',
+          },
+          content: `<h2>Khát Vọng Trở Thành Thương Hiệu Số 1 Về Độ Tin Cậy</h2>
+<p>Với nhiều năm kinh nghiệm nghiên cứu và phát triển giải pháp số, chúng tôi không ngừng cải tiến sản phẩm để mang đến giá trị thực chất nhất cho cộng đồng người dùng. Mỗi tính năng được phát triển đều dựa trên sự thấu hiểu sâu sắc hành vi và nhu cầu thực tế.</p>
+<p><strong>Tiêu chuẩn vận hành hàng đầu:</strong></p>
+<ul>
+  <li>Minh bạch tuyệt đối trong quy trình và chính sách dịch vụ.</li>
+  <li>Ứng dụng công nghệ điện toán đám mây tiên tiến nhất hiện nay.</li>
+  <li>Luôn lắng nghe phản hồi của người dùng để hoàn thiện mỗi ngày.</li>
+</ul>`,
+        },
+      ];
+    },
+  },
+];
 
 export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
   currentSite,
@@ -88,6 +490,41 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
   const [isDeployingHomepage, setIsDeployingHomepage] = useState(false);
   const [deployHomepageSuccessUrl, setDeployHomepageSuccessUrl] = useState<string | null>(null);
   const [deployHomepageError, setDeployHomepageError] = useState<string | null>(null);
+  const [richEditorActive, setRichEditorActive] = useState<Record<string, boolean>>({});
+  const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
+  const [editingTitleText, setEditingTitleText] = useState('');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+
+  const handleApplyTemplate = (template: HomepageTemplatePreset) => {
+    if (sections.length > 0) {
+      const ok = window.confirm(
+        `Áp dụng "${template.name}" sẽ thay thế bố cục hiện tại bằng 4 khối: Banner, ImgBox, MessBox và Text Demo.\n\nBạn có muốn tiếp tục không?`
+      );
+      if (!ok) return;
+    }
+    const newSections = template.generateSections();
+    onChangeSections(newSections);
+    setSelectedTemplateId(template.id);
+  };
+
+  const startEditingTitle = (sec: SectionItem) => {
+    const currentName = sec.type === 'image'
+      ? (sec.data?.title || sec.data?.caption || 'Hình Ảnh Nổi Bật')
+      : (sec.title || availableElements.find((e) => e.type === sec.type)?.name || sec.type);
+    setEditingTitleId(sec.id);
+    setEditingTitleText(currentName);
+  };
+
+  const saveTitle = (secId: string) => {
+    const trimmed = editingTitleText.trim();
+    if (trimmed) {
+      handleUpdateSection(secId, {
+        title: trimmed,
+        data: { ...(sections.find((s) => s.id === secId)?.data || {}), title: trimmed },
+      });
+    }
+    setEditingTitleId(null);
+  };
 
   // 15+ Flatsome UX Builder Elements catalog
   const availableElements: ElementDefinition[] = [
@@ -520,10 +957,25 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
 
   const handleClone = (index: number) => {
     const sec = sections[index];
+    const clonedData = sec.data ? JSON.parse(JSON.stringify(sec.data)) : {};
+
+    // Tự động đánh số bản sao thông minh (Bản sao 2, Bản sao 3...) thay vì nối chuỗi dài dằng dặc
+    let newTitle: string | undefined = undefined;
+    const baseTitle = sec.title || availableElements.find((e) => e.type === sec.type)?.name || sec.type;
+    const copyMatch = baseTitle.match(/^(.*?)(?:\s*\(Bản sao(?:\s*(\d+))?\))$/);
+    if (copyMatch && copyMatch[1]) {
+      const cleanBase = copyMatch[1].trim();
+      const nextNum = copyMatch[2] ? parseInt(copyMatch[2], 10) + 1 : 2;
+      newTitle = `${cleanBase} (Bản sao ${nextNum})`;
+    } else {
+      newTitle = `${baseTitle} (Bản sao)`;
+    }
+
     const cloned: SectionItem = {
       ...sec,
       id: `${sec.type}-${Date.now()}`,
-      title: sec.title ? `${sec.title} (Bản sao)` : undefined,
+      title: newTitle,
+      data: { ...clonedData, title: newTitle },
     };
     const updated = [...sections];
     updated.splice(index + 1, 0, cloned);
@@ -720,7 +1172,10 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
           ...(sec?.data || {}),
           fileData: base64,
           filename: file.name,
-          imageUrl: base64, // Instant preview
+          imageUrl: base64, // Instant preview for image section
+          bgImage: base64,  // Instant preview for message_box and banner
+          imageId: undefined, // Reset imageId so deployHomepage knows this new file needs upload to WP!
+          bgImageId: undefined, // Reset bgImageId
           title: sec?.data?.title || fileNameClean,
           alt: sec?.data?.alt || sec?.title || fileNameClean,
           caption: sec?.data?.caption || '',
@@ -763,6 +1218,8 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
             ...(sec.data || {}),
             imageId: res.media.id,
             imageUrl: res.media.url,
+            bgImage: res.media.url,
+            bgImageId: res.media.id,
             alt: res.media.alt || sec.data.alt,
             caption: res.media.caption || sec.data.caption,
             description: res.media.description || sec.data.description,
@@ -844,6 +1301,7 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
       const processedSections = [...sections];
       for (let i = 0; i < processedSections.length; i++) {
         const sec = processedSections[i];
+        // Tự động tải ảnh Base64 local lên WordPress Media nếu chưa có ID
         if (sec.data?.fileData && !sec.data?.imageId) {
           try {
             const uploadRes = await api.uploadMedia(currentSite, {
@@ -856,11 +1314,13 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
             });
             if (uploadRes && uploadRes.media) {
               processedSections[i] = {
-                ...sec,
+                ...processedSections[i],
                 data: {
-                  ...sec.data,
+                  ...processedSections[i].data,
                   imageId: uploadRes.media.id,
                   imageUrl: uploadRes.media.url,
+                  bgImage: uploadRes.media.url,
+                  bgImageId: uploadRes.media.id,
                   fileData: undefined,
                   isUploaded: true,
                 },
@@ -870,12 +1330,37 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
             console.warn('Auto upload image failed, continuing with direct fallback:', uploadErr);
           }
         }
+
+        // Tự động tải ảnh Base64 mobile lên WordPress Media nếu có
+        if (sec.data?.mobileFileData && !sec.data?.mobileImageId) {
+          try {
+            const uploadRes = await api.uploadMedia(currentSite, {
+              filename: sec.data.mobileFilename || `mobile-${Date.now()}.png`,
+              fileData: sec.data.mobileFileData,
+              altText: sec.data.alt ? `${sec.data.alt} Mobile` : 'Mobile Banner',
+              title: sec.data.title ? `${sec.data.title} Mobile` : 'Mobile Banner',
+            });
+            if (uploadRes && uploadRes.media) {
+              processedSections[i] = {
+                ...processedSections[i],
+                data: {
+                  ...processedSections[i].data,
+                  mobileImageId: uploadRes.media.id,
+                  mobileBgImage: uploadRes.media.url,
+                  mobileFileData: undefined,
+                },
+              };
+            }
+          } catch (uploadErr) {
+            console.warn('Auto upload mobile image failed:', uploadErr);
+          }
+        }
       }
 
       // Làm sạch dữ liệu fileData Base64 trước khi gửi deploy
       const sanitizedSections = processedSections.map((sec) => {
-        if (sec.data?.fileData) {
-          const { fileData, ...restData } = sec.data;
+        if (sec.data?.fileData || sec.data?.mobileFileData) {
+          const { fileData, mobileFileData, ...restData } = sec.data;
           return { ...sec, data: restData };
         }
         return sec;
@@ -903,7 +1388,7 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
   ];
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 w-full">
       {/* Title */}
       <div className="flex items-start justify-between">
         <div>
@@ -953,6 +1438,19 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
               </>
             )}
           </button>
+
+          {currentSite?.siteUrl && (
+            <a
+              href={currentSite.siteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
+              title="Mở trang chủ website thật trên tab mới để xem kết quả thực tế"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
+              <span>Xem Web Thật</span>
+            </a>
+          )}
         </div>
       </div>
 
@@ -1091,6 +1589,109 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
         </div>
       )}
 
+      {/* 🌟 3 MẪU TRANG CHỦ ĐƠN GIẢN: BANNER, IMGBOX, MESSBOX, TEXT DEMO */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-5 border border-indigo-500/40 text-white shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-800/40 pb-3.5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-400/30 flex items-center justify-center font-bold text-lg shadow-inner shrink-0">
+              ✨
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-sm font-bold text-white tracking-wide">
+                  3 Mẫu Bố Cục Trang Chủ Đơn Giản (1-Click Chọn Ngay)
+                </h3>
+                <span className="text-[10px] font-mono uppercase bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-400/30 font-bold">
+                  Banner + ImgBox + MessBox + Text Demo
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 mt-0.5">
+                Được thiết kế tinh gọn chuẩn 4 khối UX Builder theo yêu cầu. Nhấp chọn 1 trong 3 mẫu dưới đây để nạp nhanh cấu trúc trang chủ:
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[10px] text-indigo-300 bg-indigo-900/50 border border-indigo-500/30 px-2.5 py-1 rounded-lg font-mono">
+              Flatsome UX Builder
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+          {HOMEPAGE_TEMPLATES.map((tmpl) => {
+            const isSelected = selectedTemplateId === tmpl.id;
+            return (
+              <div
+                key={tmpl.id}
+                className={`rounded-xl border p-4 transition-all duration-200 flex flex-col justify-between gap-3 text-left relative ${
+                  isSelected
+                    ? 'bg-slate-800/95 border-amber-400/80 ring-2 ring-amber-400/40 shadow-lg'
+                    : 'bg-slate-800/60 border-slate-700/80 hover:border-indigo-400/60 hover:bg-slate-800/80 shadow-xs'
+                }`}
+              >
+                {isSelected && (
+                  <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-[9px] uppercase px-2 py-0.5 rounded-full shadow-xs flex items-center gap-1 border border-amber-300">
+                    <Check className="w-3 h-3 stroke-[3]" /> Đang Sử Dụng
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${tmpl.badgeColor}`}>
+                      {tmpl.badge}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono font-bold">4 Khối</span>
+                  </div>
+
+                  <h4 className="font-bold text-xs text-white leading-snug">
+                    {tmpl.name}
+                  </h4>
+
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    {tmpl.description}
+                  </p>
+
+                  {/* 4 Blocks list */}
+                  <div className="pt-2 border-t border-slate-700/60 space-y-1.5">
+                    <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                      Cấu trúc 4 khối trong mẫu:
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {tmpl.blocks.map((blk, bIdx) => (
+                        <div
+                          key={bIdx}
+                          className="bg-slate-900/70 border border-slate-700/60 rounded-lg p-1.5 flex items-start gap-1.5 text-slate-200"
+                        >
+                          <span className="text-xs shrink-0">{blk.icon}</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[10px] font-bold text-white truncate">{blk.name}</div>
+                            <div className="text-[8px] text-slate-400 line-clamp-1">{blk.desc}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleApplyTemplate(tmpl)}
+                  className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs ${
+                    isSelected
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{isSelected ? 'Nạp Lại Mẫu Này' : 'Áp Dụng Mẫu Này'}</span>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Sections List Canvas */}
       <div className="space-y-3">
         {sections.map((sec, idx) => {
@@ -1118,18 +1719,87 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
                     {icon}
                   </span>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-xs text-slate-900 truncate">
-                        {sec.type === 'image'
-                          ? (sec.data?.title || sec.data?.caption || 'Hình Ảnh Nổi Bật')
-                          : (sec.title || name)}
-                      </span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {editingTitleId === sec.id ? (
+                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="text"
+                            value={editingTitleText}
+                            onChange={(e) => setEditingTitleText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                saveTitle(sec.id);
+                              } else if (e.key === 'Escape') {
+                                setEditingTitleId(null);
+                              }
+                            }}
+                            autoFocus
+                            placeholder="Nhập tên mới cho khối..."
+                            className="bg-white border-2 border-blue-500 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-900 outline-hidden shadow-xs min-w-[220px]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => saveTitle(sec.id)}
+                            className="p-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs cursor-pointer shadow-xs transition"
+                            title="Lưu tên (Enter)"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingTitleId(null)}
+                            className="p-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs cursor-pointer transition"
+                            title="Hủy (Esc)"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 group/title">
+                          <span
+                            className="font-bold text-xs text-slate-900 truncate max-w-[280px] sm:max-w-md hover:text-blue-600 transition cursor-pointer"
+                            title="Bấm hoặc nhấp đúp để đổi tên khối"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startEditingTitle(sec);
+                            }}
+                          >
+                            {sec.type === 'image'
+                              ? (sec.data?.title || sec.data?.caption || 'Hình Ảnh Nổi Bật')
+                              : (sec.title || name)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startEditingTitle(sec);
+                            }}
+                            className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition cursor-pointer"
+                            title="Đổi tên khối này"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                       <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200 shrink-0 uppercase">
                         {sec.type}
                       </span>
                       {sec.layout && (
                         <span className="text-[10px] font-medium bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-100 shrink-0">
                           {columnOptions.find((c) => c.id === sec.layout)?.label || sec.layout}
+                        </span>
+                      )}
+                      {sec.data?.visibility === 'hide-for-small' && (
+                        <span className="text-[10px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200 shrink-0 flex items-center gap-1">
+                          <Monitor className="w-3 h-3 text-amber-600" />
+                          <span>Chỉ Máy Tính</span>
+                        </span>
+                      )}
+                      {sec.data?.visibility === 'show-for-small' && (
+                        <span className="text-[10px] font-bold bg-purple-50 text-purple-700 px-2 py-0.5 rounded-md border border-purple-200 shrink-0 flex items-center gap-1">
+                          <Smartphone className="w-3 h-3 text-purple-600" />
+                          <span>Chỉ Mobile</span>
                         </span>
                       )}
                     </div>
@@ -1188,7 +1858,36 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
 
               {/* Expanded Customizer Form */}
               {isExpanded && (
-                <div className="px-5 pb-5 pt-1 border-t border-slate-100 space-y-4 animate-in fade-in duration-150">
+                <div className="px-5 pb-5 pt-1 border-t border-slate-100 space-y-4">
+                  {/* Tên / Nhãn Gợi Nhớ Cho Khối (Dễ Dàng Quản Lý Danh Sách) */}
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2">
+                      <Tag className="w-4 h-4 text-blue-600 shrink-0" />
+                      <div>
+                        <label className="text-xs font-bold text-slate-800 block">
+                          Tên / Nhãn Khối Quản Lý
+                        </label>
+                        <span className="text-[11px] text-slate-500">
+                          Đặt tên gợi nhớ để phân biệt nhanh giữa các khối (vd: Banner Desktop, Banner Mobile, Khuyến mãi...)
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full sm:w-80">
+                      <input
+                        type="text"
+                        value={sec.title || ''}
+                        placeholder={name}
+                        onChange={(e) => {
+                          handleUpdateSection(sec.id, {
+                            title: e.target.value,
+                            data: { ...(sec.data || {}), title: e.target.value },
+                          });
+                        }}
+                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-900 outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
                   {/* Row & Column Layout Configuration */}
                   <div className="bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/80 space-y-2.5">
                     <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
@@ -1214,8 +1913,8 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
                     </div>
                   </div>
 
-                  {/* Section Container Style (Background & Padding) */}
-                  <div className="grid grid-cols-2 gap-3">
+                  {/* Section Container Style (Background, Padding, Container & Device Visibility) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-slate-600 mb-1">Màu Nền Section</label>
                       <div className="flex items-center gap-2">
@@ -1225,17 +1924,22 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
                           onChange={(e) => handleUpdateSection(sec.id, { bgColor: e.target.value })}
                           className="w-8 h-8 rounded border border-slate-300 cursor-pointer"
                         />
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 flex-wrap">
                           {[
                             { label: 'Trắng', val: '#ffffff' },
                             { label: 'Xám', val: '#f8fafc' },
                             { label: 'Tối', val: '#0f172a' },
+                            { label: 'Trong suốt', val: 'transparent' },
                           ].map((b) => (
                             <button
                               key={b.val}
                               type="button"
                               onClick={() => handleUpdateSection(sec.id, { bgColor: b.val })}
-                              className="px-2 py-1 text-[11px] border border-slate-200 rounded bg-white hover:bg-slate-50 text-slate-600"
+                              className={`px-2 py-1 text-[11px] border rounded transition cursor-pointer ${
+                                (sec.bgColor || '#ffffff') === b.val
+                                  ? 'border-blue-500 bg-blue-50 text-blue-700 font-bold'
+                                  : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-600'
+                              }`}
                             >
                               {b.label}
                             </button>
@@ -1245,16 +1949,184 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Khoảng Cách (Padding)</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-medium text-slate-600">Khoảng Cách (Padding)</label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const isCustom = sec.padding && (sec.padding.includes(' ') || !['none', '5px', 'tight', 'compact', '20px', 'small', 'normal', 'large'].includes(sec.padding));
+                            if (isCustom) {
+                              handleUpdateSection(sec.id, { padding: 'normal' });
+                            } else {
+                              const top = parsePaddingTop(sec.padding);
+                              const bot = parsePaddingBottom(sec.padding);
+                              handleUpdateSection(sec.id, { padding: `${top}px 0px ${bot}px 0px` });
+                            }
+                          }}
+                          className="text-[10px] text-blue-600 hover:text-blue-700 hover:underline font-medium cursor-pointer"
+                        >
+                          {sec.padding && (sec.padding.includes(' ') || !['none', '5px', 'tight', 'compact', '20px', 'small', 'normal', 'large'].includes(sec.padding))
+                            ? '← Mẫu có sẵn'
+                            : '⚙ Tùy chỉnh Top/Bottom'}
+                        </button>
+                      </div>
+
+                      {sec.padding && (sec.padding.includes(' ') || !['none', '5px', 'tight', 'compact', '20px', 'small', 'normal', 'large'].includes(sec.padding)) ? (
+                        <div className="bg-slate-50 p-2.5 border border-slate-200 rounded-lg space-y-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <span className="text-[10px] font-semibold text-slate-600 block mb-1">Đệm Trên (Top px)</span>
+                              <input
+                                type="number"
+                                min="0"
+                                max="200"
+                                step="5"
+                                value={parsePaddingTop(sec.padding)}
+                                onChange={(e) => {
+                                  const top = Math.max(0, parseInt(e.target.value, 10) || 0);
+                                  const bottom = parsePaddingBottom(sec.padding);
+                                  handleUpdateSection(sec.id, { padding: `${top}px 0px ${bottom}px 0px` });
+                                }}
+                                className="w-full bg-white border border-slate-200 text-xs rounded p-1.5 font-mono text-center"
+                              />
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-semibold text-slate-600 block mb-1">Đệm Dưới (Bottom px)</span>
+                              <input
+                                type="number"
+                                min="0"
+                                max="200"
+                                step="5"
+                                value={parsePaddingBottom(sec.padding)}
+                                onChange={(e) => {
+                                  const top = parsePaddingTop(sec.padding);
+                                  const bottom = Math.max(0, parseInt(e.target.value, 10) || 0);
+                                  handleUpdateSection(sec.id, { padding: `${top}px 0px ${bottom}px 0px` });
+                                }}
+                                className="w-full bg-white border border-slate-200 text-xs rounded p-1.5 font-mono text-center"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 justify-between pt-1 border-t border-slate-200/60 flex-wrap">
+                            <span className="text-[9px] text-slate-500">Mẹo đặt 2 khối sát nhau: Đặt 0px</span>
+                            <div className="flex gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateSection(sec.id, { padding: 'none' })}
+                                className="px-1.5 py-0.5 text-[9px] bg-white border border-slate-200 rounded hover:bg-slate-100 text-slate-600 cursor-pointer font-medium"
+                              >
+                                0px sát
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateSection(sec.id, { padding: '20px 0px 0px 0px' })}
+                                className="px-1.5 py-0.5 text-[9px] bg-white border border-slate-200 rounded hover:bg-slate-100 text-slate-600 cursor-pointer"
+                                title="Đệm trên 20px, đệm dưới 0px để nối tiếp hộp bên dưới"
+                              >
+                                Dưới 0px
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateSection(sec.id, { padding: '0px 0px 20px 0px' })}
+                                className="px-1.5 py-0.5 text-[9px] bg-white border border-slate-200 rounded hover:bg-slate-100 text-slate-600 cursor-pointer"
+                                title="Đệm trên 0px, đệm dưới 20px"
+                              >
+                                Trên 0px
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <select
+                          value={sec.padding || 'normal'}
+                          onChange={(e) => {
+                            if (e.target.value === 'custom') {
+                              const top = parsePaddingTop(sec.padding);
+                              const bot = parsePaddingBottom(sec.padding);
+                              handleUpdateSection(sec.id, { padding: `${top}px 0px ${bot}px 0px` });
+                            } else {
+                              handleUpdateSection(sec.id, { padding: e.target.value });
+                            }
+                          }}
+                          className="w-full bg-slate-50 border border-slate-200 text-xs rounded-lg p-2 outline-hidden cursor-pointer"
+                        >
+                          <option value="none">Sát nhau / Không đệm (0px)</option>
+                          <option value="5px">Siêu sát (5px)</option>
+                          <option value="tight">Cực gọn (10px)</option>
+                          <option value="compact">Gọn nhẹ (15px)</option>
+                          <option value="20px">Vừa gọn (20px)</option>
+                          <option value="small">Vừa phải (35px)</option>
+                          <option value="normal">Tiêu chuẩn (60px)</option>
+                          <option value="large">Rộng rãi (90px)</option>
+                          <option value="custom">⚙ Tùy chỉnh (Top / Bottom px)...</option>
+                        </select>
+                      )}
+                    </div>
+
+                    {/* Container Width (Khung Chứa) */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-medium text-slate-600">Khung Chứa (Container)</label>
+                        <span className="text-[9px] text-slate-400">Độ rộng lề ngang</span>
+                      </div>
                       <select
-                        value={sec.padding || 'normal'}
-                        onChange={(e) => handleUpdateSection(sec.id, { padding: e.target.value as any })}
-                        className="w-full bg-slate-50 border border-slate-200 text-xs rounded-lg p-2 outline-hidden"
+                        value={sec.data?.container || 'container'}
+                        onChange={(e) => {
+                          handleUpdateSection(sec.id, {
+                            data: { ...(sec.data || {}), container: e.target.value },
+                          });
+                        }}
+                        className={`w-full text-xs rounded-lg p-2 outline-hidden cursor-pointer font-medium border ${
+                          (sec.data?.container || 'container') === 'container'
+                            ? 'bg-blue-50 border-blue-200 text-blue-900'
+                            : 'bg-slate-50 border-slate-200 text-slate-700'
+                        }`}
                       >
-                        <option value="small">Gọn gàng (35px)</option>
-                        <option value="normal">Tiêu chuẩn (60px)</option>
-                        <option value="large">Rộng rãi (90px)</option>
+                        <option value="container">📦 Khung Container (Có lề 15px - Chống tràn)</option>
+                        <option value="full-width">↔️ Tràn Viền 100% (Sát mép 0px)</option>
                       </select>
+                      <p className="text-[9px] text-slate-400 mt-1">
+                        {(sec.data?.container || 'container') === 'container'
+                          ? 'Khối thụt vào 15px hai bên lề trên Mobile & bo gọn trên PC, chống dính mép màn hình.'
+                          : 'Khối kéo dài 100% sát mép màn hình không có khoảng hở.'}
+                      </p>
+                    </div>
+
+                    {/* Device Visibility (Hiển Thị Thiết Bị) */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-medium text-slate-600">Thiết Bị Hiển Thị</label>
+                        {sec.data?.visibility && sec.data.visibility !== 'visible' && (
+                          <span className="text-[9px] font-bold text-amber-600">Đã tách riêng</span>
+                        )}
+                      </div>
+                      <select
+                        value={sec.data?.visibility || ''}
+                        onChange={(e) => {
+                          handleUpdateSection(sec.id, {
+                            data: { ...(sec.data || {}), visibility: e.target.value },
+                          });
+                        }}
+                        className={`w-full text-xs rounded-lg p-2 outline-hidden cursor-pointer font-medium border ${
+                          sec.data?.visibility === 'hide-for-small'
+                            ? 'bg-amber-50 border-amber-300 text-amber-900'
+                            : sec.data?.visibility === 'show-for-small'
+                            ? 'bg-purple-50 border-purple-300 text-purple-900'
+                            : 'bg-slate-50 border-slate-200 text-slate-700'
+                        }`}
+                      >
+                        <option value="">🌐 Tất Cả Thiết Bị (Mặc định)</option>
+                        <option value="hide-for-small">💻 Chỉ Máy Tính (Ẩn trên Mobile)</option>
+                        <option value="show-for-small">📱 Chỉ Điện Thoại (Ẩn trên Máy Tính)</option>
+                        <option value="hide-for-medium">🖥️ Ẩn trên Mobile &amp; Tablet</option>
+                      </select>
+                      <p className="text-[9px] text-slate-400 mt-1">
+                        {sec.data?.visibility === 'hide-for-small'
+                          ? 'Khối này sẽ bị ẩn hoàn toàn khi người dùng xem bằng điện thoại.'
+                          : sec.data?.visibility === 'show-for-small'
+                          ? 'Khối này chỉ xuất hiện trên điện thoại (máy tính không thấy).'
+                          : 'Tự động co giãn responsive trên cả máy tính, tablet và điện thoại.'}
+                      </p>
                     </div>
                   </div>
 
@@ -1275,17 +2147,765 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
                           />
                         </div>
 
-                        {sec.type !== 'divider_gap' && (
-                          <div>
-                            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                              Mô Tả / Phụ Đề
-                            </label>
-                            <textarea
-                              rows={2}
-                              value={sec.subtitle || sec.content || ''}
-                              onChange={(e) => handleUpdateSection(sec.id, { subtitle: e.target.value, content: e.target.value })}
-                              className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-900 outline-hidden focus:border-blue-500"
+                        {sec.type === 'text_block' ? (
+                          <div className="space-y-3 pt-1">
+                            {/* Cấu Hình Khung Box & Đường Viền (Card & Box Styling) */}
+                            <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 p-4 rounded-xl border border-slate-700/80 shadow-md text-slate-100 space-y-3.5">
+                              <div className="flex items-center justify-between flex-wrap gap-2">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+                                    <Box className="w-4 h-4" />
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs font-bold text-white tracking-wide uppercase">
+                                        Thiết Kế Khung Box &amp; Đường Viền (Card Styling)
+                                      </span>
+                                      <span
+                                        className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
+                                          sec.data?.boxEnabled
+                                            ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
+                                            : 'bg-slate-700 border-slate-600 text-slate-300'
+                                        }`}
+                                      >
+                                        {sec.data?.boxEnabled ? '✓ Đang Bật Box' : '○ Trong Suốt (Không Box)'}
+                                      </span>
+                                    </div>
+                                    <p className="text-[11px] text-slate-400 mt-0.5">
+                                      Tạo khung thẻ bài viết có màu nền, đường viền bo góc, phát sáng viền và chỉnh tương phản chữ cho website nền tối hoặc nền sáng.
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const isEnabled = !sec.data?.boxEnabled;
+                                    handleUpdateSection(sec.id, {
+                                      data: {
+                                        ...(sec.data || {}),
+                                        boxEnabled: isEnabled,
+                                        ...(isEnabled && !sec.data?.boxBgColor
+                                          ? {
+                                              boxPreset: 'gold-luxury',
+                                              boxBgColor: 'rgba(10, 15, 29, 0.92)',
+                                              boxTextColor: 'gold',
+                                              boxBorderWidth: 1.5,
+                                              boxBorderColor: '#f59e0b',
+                                              boxBorderStyle: 'solid',
+                                              boxRadius: 16,
+                                              boxPadding: '24px 28px',
+                                              boxShadow: 'glow-gold',
+                                              boxBackdropBlur: true,
+                                            }
+                                          : {}),
+                                      },
+                                      textColor: isEnabled && (sec.data?.boxTextColor || 'gold') !== 'dark' ? 'light' : sec.textColor,
+                                    });
+                                  }}
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                                    sec.data?.boxEnabled
+                                      ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-black'
+                                      : 'bg-slate-700 hover:bg-slate-600 text-white'
+                                  }`}
+                                >
+                                  <Zap className="w-3.5 h-3.5" />
+                                  <span>{sec.data?.boxEnabled ? 'Tắt Khung Box' : 'Bật Khung Box'}</span>
+                                </button>
+                              </div>
+
+                              {/* 1-Click Quick Presets */}
+                              <div className="space-y-1.5 pt-1 border-t border-slate-700/60">
+                                <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300">
+                                  <span className="flex items-center gap-1 text-amber-400">
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                    <span>Chọn Nhanh Mẫu Phối Sẵn (1-Click Presets):</span>
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 font-normal">Click để áp dụng ngay màu nền &amp; viền</span>
+                                </div>
+
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                                  {/* Preset 1: Casino Gold VIP */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleUpdateSection(sec.id, {
+                                        data: {
+                                          ...(sec.data || {}),
+                                          boxEnabled: true,
+                                          boxPreset: 'gold-luxury',
+                                          boxBgColor: 'rgba(10, 15, 29, 0.92)',
+                                          boxTextColor: 'gold',
+                                          boxBorderWidth: 1.5,
+                                          boxBorderColor: '#f59e0b',
+                                          boxBorderStyle: 'solid',
+                                          boxRadius: 16,
+                                          boxPadding: '24px 28px',
+                                          boxShadow: 'glow-gold',
+                                          boxBackdropBlur: true,
+                                        },
+                                        textColor: 'light',
+                                      });
+                                    }}
+                                    className={`p-2 rounded-lg border text-left transition relative cursor-pointer ${
+                                      sec.data?.boxEnabled && sec.data?.boxPreset === 'gold-luxury'
+                                        ? 'border-amber-400 bg-amber-950/40 ring-2 ring-amber-500/50 shadow-md'
+                                        : 'border-amber-500/30 bg-slate-900/80 hover:border-amber-400/70'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-[11px] font-black text-amber-400">👑 Casino Gold VIP</span>
+                                    </div>
+                                    <div className="text-[9px] text-slate-300 leading-tight">
+                                      Nền đen sẫm, viền vàng kim óng ánh, phát sáng Glow.
+                                    </div>
+                                    <div className="mt-1.5 h-3 rounded bg-[#0b0f19] border border-amber-500 flex items-center px-1">
+                                      <div className="w-8 h-1 rounded bg-amber-400"></div>
+                                    </div>
+                                  </button>
+
+                                  {/* Preset 2: Glassmorphism Dark */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleUpdateSection(sec.id, {
+                                        data: {
+                                          ...(sec.data || {}),
+                                          boxEnabled: true,
+                                          boxPreset: 'glass-dark',
+                                          boxBgColor: 'rgba(15, 23, 42, 0.78)',
+                                          boxTextColor: 'light',
+                                          boxBorderWidth: 1,
+                                          boxBorderColor: 'rgba(255, 255, 255, 0.2)',
+                                          boxBorderStyle: 'solid',
+                                          boxRadius: 16,
+                                          boxPadding: '24px 28px',
+                                          boxShadow: 'deep',
+                                          boxBackdropBlur: true,
+                                        },
+                                        textColor: 'light',
+                                      });
+                                    }}
+                                    className={`p-2 rounded-lg border text-left transition relative cursor-pointer ${
+                                      sec.data?.boxEnabled && sec.data?.boxPreset === 'glass-dark'
+                                        ? 'border-cyan-400 bg-slate-800 ring-2 ring-cyan-500/50 shadow-md'
+                                        : 'border-slate-600 bg-slate-900/80 hover:border-slate-500'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-[11px] font-bold text-cyan-300">💎 Kính Tối Mờ</span>
+                                    </div>
+                                    <div className="text-[9px] text-slate-300 leading-tight">
+                                      Nền kính đen trong mờ, viền trắng mờ tinh tế, 3D Blur.
+                                    </div>
+                                    <div className="mt-1.5 h-3 rounded bg-slate-800/80 border border-white/30 flex items-center px-1">
+                                      <div className="w-8 h-1 rounded bg-cyan-300"></div>
+                                    </div>
+                                  </button>
+
+                                  {/* Preset 3: Clean White Card */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleUpdateSection(sec.id, {
+                                        data: {
+                                          ...(sec.data || {}),
+                                          boxEnabled: true,
+                                          boxPreset: 'card-white',
+                                          boxBgColor: '#ffffff',
+                                          boxTextColor: 'dark',
+                                          boxBorderWidth: 1,
+                                          boxBorderColor: '#e2e8f0',
+                                          boxBorderStyle: 'solid',
+                                          boxRadius: 12,
+                                          boxPadding: '24px 28px',
+                                          boxShadow: 'subtle',
+                                          boxBackdropBlur: false,
+                                        },
+                                        textColor: 'dark',
+                                      });
+                                    }}
+                                    className={`p-2 rounded-lg border text-left transition relative cursor-pointer ${
+                                      sec.data?.boxEnabled && sec.data?.boxPreset === 'card-white'
+                                        ? 'border-white bg-white text-slate-900 ring-2 ring-white/50 shadow-md'
+                                        : 'border-slate-600 bg-slate-900/80 hover:border-slate-400'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-[11px] font-bold text-white group-hover:text-white">📄 Thẻ Trắng Sáng</span>
+                                    </div>
+                                    <div className="text-[9px] text-slate-300 leading-tight">
+                                      Nền trắng tinh, chữ than nổi bật trên website nền tối.
+                                    </div>
+                                    <div className="mt-1.5 h-3 rounded bg-white border border-slate-300 flex items-center px-1">
+                                      <div className="w-8 h-1 rounded bg-slate-800"></div>
+                                    </div>
+                                  </button>
+
+                                  {/* Preset 4: Viền Vàng Trong Suốt */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleUpdateSection(sec.id, {
+                                        data: {
+                                          ...(sec.data || {}),
+                                          boxEnabled: true,
+                                          boxPreset: 'border-only-gold',
+                                          boxBgColor: 'transparent',
+                                          boxTextColor: 'light',
+                                          boxBorderWidth: 2,
+                                          boxBorderColor: '#f59e0b',
+                                          boxBorderStyle: 'solid',
+                                          boxRadius: 14,
+                                          boxPadding: '20px 24px',
+                                          boxShadow: 'glow-gold',
+                                          boxBackdropBlur: false,
+                                        },
+                                        textColor: 'light',
+                                      });
+                                    }}
+                                    className={`p-2 rounded-lg border text-left transition relative cursor-pointer ${
+                                      sec.data?.boxEnabled && sec.data?.boxPreset === 'border-only-gold'
+                                        ? 'border-amber-400 bg-amber-950/40 ring-2 ring-amber-500/50 shadow-md'
+                                        : 'border-slate-600 bg-slate-900/80 hover:border-amber-400/50'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-[11px] font-bold text-amber-300">✨ Viền Vàng Trong</span>
+                                    </div>
+                                    <div className="text-[9px] text-slate-300 leading-tight">
+                                      Không nền (trong suốt), chỉ đóng khung viền vàng óng.
+                                    </div>
+                                    <div className="mt-1.5 h-3 rounded bg-transparent border-2 border-amber-500 flex items-center px-1">
+                                      <div className="w-8 h-1 rounded bg-amber-300"></div>
+                                    </div>
+                                  </button>
+
+                                  {/* Preset 5: Viền Trắng Trong Suốt */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleUpdateSection(sec.id, {
+                                        data: {
+                                          ...(sec.data || {}),
+                                          boxEnabled: true,
+                                          boxPreset: 'border-only-white',
+                                          boxBgColor: 'transparent',
+                                          boxTextColor: 'light',
+                                          boxBorderWidth: 1.5,
+                                          boxBorderColor: 'rgba(255, 255, 255, 0.35)',
+                                          boxBorderStyle: 'solid',
+                                          boxRadius: 12,
+                                          boxPadding: '20px 24px',
+                                          boxShadow: 'none',
+                                          boxBackdropBlur: false,
+                                        },
+                                        textColor: 'light',
+                                      });
+                                    }}
+                                    className={`p-2 rounded-lg border text-left transition relative cursor-pointer ${
+                                      sec.data?.boxEnabled && sec.data?.boxPreset === 'border-only-white'
+                                        ? 'border-white bg-slate-800 ring-2 ring-white/50 shadow-md'
+                                        : 'border-slate-600 bg-slate-900/80 hover:border-slate-400'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-[11px] font-bold text-slate-200">🛡️ Viền Trắng Tối Giản</span>
+                                    </div>
+                                    <div className="text-[9px] text-slate-300 leading-tight">
+                                      Không nền, viền trắng mờ tối giản bao quanh khối chữ.
+                                    </div>
+                                    <div className="mt-1.5 h-3 rounded bg-transparent border border-white/40 flex items-center px-1">
+                                      <div className="w-8 h-1 rounded bg-white"></div>
+                                    </div>
+                                  </button>
+
+                                  {/* Preset 6: Tắt Box (Trong suốt mặc định) */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleUpdateSection(sec.id, {
+                                        data: {
+                                          ...(sec.data || {}),
+                                          boxEnabled: false,
+                                          boxPreset: 'none',
+                                        },
+                                      });
+                                    }}
+                                    className={`p-2 rounded-lg border text-left transition relative cursor-pointer ${
+                                      !sec.data?.boxEnabled
+                                        ? 'border-slate-400 bg-slate-800 ring-2 ring-slate-400/50 shadow-md'
+                                        : 'border-slate-700 bg-slate-950/60 hover:border-slate-600'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-[11px] font-bold text-slate-400">✕ Không Box</span>
+                                    </div>
+                                    <div className="text-[9px] text-slate-400 leading-tight">
+                                      Hiển thị tự nhiên nguyên bản, không khung bao quanh.
+                                    </div>
+                                    <div className="mt-1.5 h-3 rounded border border-dashed border-slate-600 flex items-center justify-center">
+                                      <span className="text-[8px] text-slate-500">None</span>
+                                    </div>
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Chi Tiết Tùy Chỉnh Màu Sắc, Viền, Bo Góc & Tương Phản (Hiển thị khi Bật Box) */}
+                              {sec.data?.boxEnabled && (
+                                <div className="space-y-3 pt-2.5 border-t border-slate-700/60 text-xs">
+                                  {/* Row 1: Màu Nền Box + Chế Độ Màu Chữ */}
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {/* Màu Nền Box */}
+                                    <div className="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700">
+                                      <label className="block text-[11px] font-semibold text-slate-300 mb-1.5">
+                                        Màu Nền Của Khung (Box Background)
+                                      </label>
+                                      <div className="flex items-center gap-2 flex-wrap mb-2">
+                                        <input
+                                          type="text"
+                                          value={sec.data?.boxBgColor || 'rgba(15, 23, 42, 0.85)'}
+                                          onChange={(e) => {
+                                            handleUpdateSection(sec.id, {
+                                              data: {
+                                                ...(sec.data || {}),
+                                                boxBgColor: e.target.value,
+                                                boxPreset: 'custom',
+                                              },
+                                            });
+                                          }}
+                                          placeholder="rgba(15, 23, 42, 0.85) hoặc #000000"
+                                          className="flex-1 min-w-[140px] bg-slate-900 border border-slate-600 rounded px-2.5 py-1 text-xs text-white font-mono"
+                                        />
+                                        <div
+                                          className="w-7 h-7 rounded border border-slate-500 shrink-0"
+                                          style={{ backgroundColor: sec.data?.boxBgColor || 'rgba(15, 23, 42, 0.85)' }}
+                                          title="Màu nền đang chọn"
+                                        />
+                                      </div>
+
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="text-[10px] text-slate-400">Nhanh:</span>
+                                        {[
+                                          { label: 'Kính Đen', val: 'rgba(15, 23, 42, 0.85)' },
+                                          { label: 'Casino VIP', val: 'rgba(10, 15, 29, 0.95)' },
+                                          { label: 'Trắng Tinh', val: '#ffffff' },
+                                          { label: 'Xám Slate', val: '#1e293b' },
+                                          { label: 'Trong Suốt', val: 'transparent' },
+                                        ].map((swatch) => (
+                                          <button
+                                            key={swatch.val}
+                                            type="button"
+                                            onClick={() => {
+                                              handleUpdateSection(sec.id, {
+                                                data: {
+                                                  ...(sec.data || {}),
+                                                  boxBgColor: swatch.val,
+                                                  boxPreset: 'custom',
+                                                  ...(swatch.val === '#ffffff' ? { boxTextColor: 'dark' } : {}),
+                                                },
+                                                textColor: swatch.val === '#ffffff' ? 'dark' : sec.textColor,
+                                              });
+                                            }}
+                                            className={`px-2 py-0.5 rounded text-[10px] border transition cursor-pointer ${
+                                              (sec.data?.boxBgColor || 'rgba(15, 23, 42, 0.85)') === swatch.val
+                                                ? 'bg-blue-600 border-blue-400 text-white font-bold'
+                                                : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-700'
+                                            }`}
+                                          >
+                                            {swatch.label}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    {/* Chế Độ Tương Phản Màu Chữ (Khắc phục hoàn toàn chữ đen chìm trên web tối) */}
+                                    <div className="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700">
+                                      <label className="block text-[11px] font-semibold text-slate-300 mb-1.5">
+                                        Chế Độ Màu Chữ &amp; Tiêu Đề (Text Contrast)
+                                      </label>
+                                      <div className="grid grid-cols-3 gap-1.5">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            handleUpdateSection(sec.id, {
+                                              data: { ...(sec.data || {}), boxTextColor: 'light' },
+                                              textColor: 'light',
+                                            });
+                                          }}
+                                          className={`p-2 rounded text-center border transition flex flex-col items-center gap-0.5 cursor-pointer ${
+                                            (sec.data?.boxTextColor || 'gold') === 'light'
+                                              ? 'bg-blue-600/30 border-blue-400 text-white ring-1 ring-blue-400 font-bold'
+                                              : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-700'
+                                          }`}
+                                        >
+                                          <Sun className="w-3.5 h-3.5 text-amber-300" />
+                                          <span className="text-[10px]">Chữ Sáng (Trắng)</span>
+                                          <span className="text-[8px] text-slate-400">Cho web nền tối</span>
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            handleUpdateSection(sec.id, {
+                                              data: { ...(sec.data || {}), boxTextColor: 'gold' },
+                                              textColor: 'light',
+                                            });
+                                          }}
+                                          className={`p-2 rounded text-center border transition flex flex-col items-center gap-0.5 cursor-pointer ${
+                                            (sec.data?.boxTextColor || 'gold') === 'gold'
+                                              ? 'bg-amber-600/30 border-amber-400 text-amber-300 ring-1 ring-amber-400 font-bold'
+                                              : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-700'
+                                          }`}
+                                        >
+                                          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                                          <span className="text-[10px]">Chữ Trắng + Tiêu Đề Vàng</span>
+                                          <span className="text-[8px] text-amber-400/80">Casino Luxury</span>
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            handleUpdateSection(sec.id, {
+                                              data: { ...(sec.data || {}), boxTextColor: 'dark' },
+                                              textColor: 'dark',
+                                            });
+                                          }}
+                                          className={`p-2 rounded text-center border transition flex flex-col items-center gap-0.5 cursor-pointer ${
+                                            sec.data?.boxTextColor === 'dark'
+                                              ? 'bg-slate-300 border-white text-slate-950 ring-1 ring-white font-bold'
+                                              : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-700'
+                                          }`}
+                                        >
+                                          <Moon className="w-3.5 h-3.5 text-slate-400" />
+                                          <span className="text-[10px]">Chữ Tối (Than Đen)</span>
+                                          <span className="text-[8px] text-slate-400">Cho web nền sáng</span>
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Row 2: Đường Viền (Border) + Bo Góc (Radius) + Đệm (Padding) + Phát Sáng (Glow) */}
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                    {/* Đường Viền */}
+                                    <div className="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700">
+                                      <div className="flex items-center justify-between mb-1.5">
+                                        <label className="text-[11px] font-semibold text-slate-300">Đường Viền (Border)</label>
+                                        <select
+                                          value={sec.data?.boxBorderStyle || 'solid'}
+                                          onChange={(e) => {
+                                            handleUpdateSection(sec.id, {
+                                              data: { ...(sec.data || {}), boxBorderStyle: e.target.value },
+                                            });
+                                          }}
+                                          className="bg-slate-900 border border-slate-700 text-[10px] text-slate-300 rounded px-1.5 py-0.5"
+                                        >
+                                          <option value="solid">Liền nét</option>
+                                          <option value="dashed">Nét đứt</option>
+                                          <option value="double">Viền đôi</option>
+                                        </select>
+                                      </div>
+
+                                      <div className="flex items-center gap-1.5 mb-2">
+                                        <span className="text-[10px] text-slate-400 shrink-0">Dày:</span>
+                                        {[0, 1, 1.5, 2, 3].map((w) => (
+                                          <button
+                                            key={w}
+                                            type="button"
+                                            onClick={() => {
+                                              handleUpdateSection(sec.id, {
+                                                data: { ...(sec.data || {}), boxBorderWidth: w },
+                                              });
+                                            }}
+                                            className={`px-2 py-0.5 rounded text-[10px] border transition cursor-pointer font-mono ${
+                                              (sec.data?.boxBorderWidth !== undefined ? Number(sec.data?.boxBorderWidth) : 1) === w
+                                                ? 'bg-amber-500 border-amber-400 text-slate-950 font-bold'
+                                                : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-700'
+                                            }`}
+                                          >
+                                            {w}px
+                                          </button>
+                                        ))}
+                                      </div>
+
+                                      <div className="flex items-center gap-1.5">
+                                        <input
+                                          type="color"
+                                          value={sec.data?.boxBorderColor?.startsWith('#') ? sec.data.boxBorderColor : '#f59e0b'}
+                                          onChange={(e) => {
+                                            handleUpdateSection(sec.id, {
+                                              data: { ...(sec.data || {}), boxBorderColor: e.target.value },
+                                            });
+                                          }}
+                                          className="w-6 h-6 rounded border border-slate-600 cursor-pointer shrink-0"
+                                        />
+                                        <div className="flex items-center gap-1 flex-wrap">
+                                          {[
+                                            { label: 'Gold', val: '#f59e0b' },
+                                            { label: 'Trắng', val: 'rgba(255, 255, 255, 0.3)' },
+                                            { label: 'Xanh', val: '#3b82f6' },
+                                            { label: 'Đỏ', val: '#ef4444' },
+                                          ].map((c) => (
+                                            <button
+                                              key={c.val}
+                                              type="button"
+                                              onClick={() => {
+                                                handleUpdateSection(sec.id, {
+                                                  data: { ...(sec.data || {}), boxBorderColor: c.val },
+                                                });
+                                              }}
+                                              className="px-1.5 py-0.5 rounded text-[9px] bg-slate-900 border border-slate-700 hover:bg-slate-700 text-slate-300 cursor-pointer"
+                                            >
+                                              {c.label}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Bo Góc (Border Radius) */}
+                                    <div className="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700">
+                                      <div className="flex items-center justify-between mb-1.5">
+                                        <label className="text-[11px] font-semibold text-slate-300">Bo Góc (Radius)</label>
+                                        <span className="text-[10px] text-amber-400 font-mono font-bold">
+                                          {sec.data?.boxRadius !== undefined ? Number(sec.data?.boxRadius) : 12}px
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-1 flex-wrap mb-2">
+                                        {[0, 8, 12, 16, 24].map((r) => (
+                                          <button
+                                            key={r}
+                                            type="button"
+                                            onClick={() => {
+                                              handleUpdateSection(sec.id, {
+                                                data: { ...(sec.data || {}), boxRadius: r },
+                                              });
+                                            }}
+                                            className={`px-2 py-0.5 rounded text-[10px] border transition cursor-pointer font-mono ${
+                                              (sec.data?.boxRadius !== undefined ? Number(sec.data?.boxRadius) : 12) === r
+                                                ? 'bg-blue-600 border-blue-400 text-white font-bold'
+                                                : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-700'
+                                            }`}
+                                          >
+                                            {r === 0 ? 'Vuông' : `${r}px`}
+                                          </button>
+                                        ))}
+                                      </div>
+                                      <input
+                                        type="range"
+                                        min="0"
+                                        max="36"
+                                        value={sec.data?.boxRadius !== undefined ? Number(sec.data?.boxRadius) : 12}
+                                        onChange={(e) => {
+                                          handleUpdateSection(sec.id, {
+                                            data: { ...(sec.data || {}), boxRadius: Number(e.target.value) },
+                                          });
+                                        }}
+                                        className="w-full accent-amber-500 cursor-pointer"
+                                      />
+                                    </div>
+
+                                    {/* Đệm Trong Box (Padding) */}
+                                    <div className="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700">
+                                      <label className="block text-[11px] font-semibold text-slate-300 mb-1.5">
+                                        Đệm Trong Khung (Padding)
+                                      </label>
+                                      <div className="grid grid-cols-3 gap-1 mb-2">
+                                        {[
+                                          { label: 'Gọn', val: '16px 20px' },
+                                          { label: 'Chuẩn', val: '24px 28px' },
+                                          { label: 'Rộng', val: '32px 36px' },
+                                        ].map((p) => (
+                                          <button
+                                            key={p.val}
+                                            type="button"
+                                            onClick={() => {
+                                              handleUpdateSection(sec.id, {
+                                                data: { ...(sec.data || {}), boxPadding: p.val },
+                                              });
+                                            }}
+                                            className={`p-1 rounded text-center text-[10px] border transition cursor-pointer ${
+                                              (sec.data?.boxPadding || '24px 28px') === p.val
+                                                ? 'bg-blue-600 border-blue-400 text-white font-bold'
+                                                : 'bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-700'
+                                            }`}
+                                          >
+                                            {p.label}
+                                          </button>
+                                        ))}
+                                      </div>
+                                      <input
+                                        type="text"
+                                        value={sec.data?.boxPadding || '24px 28px'}
+                                        onChange={(e) => {
+                                          handleUpdateSection(sec.id, {
+                                            data: { ...(sec.data || {}), boxPadding: e.target.value },
+                                          });
+                                        }}
+                                        placeholder="24px 28px"
+                                        className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-[10px] text-slate-200 font-mono text-center"
+                                      />
+                                    </div>
+
+                                    {/* Đổ Bóng & Phát Sáng Viền (Glow / Shadow) */}
+                                    <div className="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700">
+                                      <label className="block text-[11px] font-semibold text-slate-300 mb-1.5">
+                                        Đổ Bóng &amp; Phát Sáng (Glow)
+                                      </label>
+                                      <select
+                                        value={sec.data?.boxShadow || 'glow-gold'}
+                                        onChange={(e) => {
+                                          handleUpdateSection(sec.id, {
+                                            data: { ...(sec.data || {}), boxShadow: e.target.value },
+                                          });
+                                        }}
+                                        className="w-full bg-slate-900 border border-slate-700 text-[11px] text-white rounded p-1.5 outline-hidden cursor-pointer mb-2"
+                                      >
+                                        <option value="none">Không bóng (None)</option>
+                                        <option value="subtle">Bóng nhẹ êm dịu (Subtle Card)</option>
+                                        <option value="medium">Bóng 3D vừa phải (Medium)</option>
+                                        <option value="deep">Bóng sâu nổi khối (Deep Float)</option>
+                                        <option value="glow-gold">🌟 Ánh Vàng Phát Sáng (Casino Gold Glow)</option>
+                                        <option value="glow-primary">🔷 Ánh Xanh Neon (Primary Cyan Glow)</option>
+                                      </select>
+
+                                      <label className="flex items-center gap-1.5 text-[10px] text-slate-300 cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          checked={sec.data?.boxBackdropBlur ?? true}
+                                          onChange={(e) => {
+                                            handleUpdateSection(sec.id, {
+                                              data: { ...(sec.data || {}), boxBackdropBlur: e.target.checked },
+                                            });
+                                          }}
+                                          className="rounded text-amber-500 accent-amber-500"
+                                        />
+                                        <span>Hiệu ứng kính mờ (Backdrop Blur)</span>
+                                      </label>
+                                    </div>
+                                  </div>
+
+                                  {/* Live Mini Preview inside card */}
+                                  <div className="p-3 rounded-lg border border-slate-700/80 bg-slate-950/70">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                        Mô Phỏng Trực Tiếp Box Trên Nền Tối
+                                      </span>
+                                      <span className="text-[9px] text-slate-500 font-mono">
+                                        Live Preview
+                                      </span>
+                                    </div>
+
+                                    <div
+                                      style={{
+                                        backgroundColor: sec.data?.boxBgColor || 'rgba(10, 15, 29, 0.92)',
+                                        border: `${sec.data?.boxBorderWidth !== undefined ? Number(sec.data?.boxBorderWidth) : 1.5}px ${sec.data?.boxBorderStyle || 'solid'} ${sec.data?.boxBorderColor || '#f59e0b'}`,
+                                        borderRadius: `${sec.data?.boxRadius !== undefined ? Number(sec.data?.boxRadius) : 16}px`,
+                                        padding: '16px 20px',
+                                        boxShadow:
+                                          sec.data?.boxShadow === 'glow-gold'
+                                            ? '0 0 16px rgba(245, 158, 11, 0.4), 0 4px 15px rgba(0,0,0,0.3)'
+                                            : sec.data?.boxShadow === 'glow-primary'
+                                            ? '0 0 16px rgba(37, 99, 235, 0.4), 0 4px 15px rgba(0,0,0,0.3)'
+                                            : sec.data?.boxShadow === 'deep'
+                                            ? '0 12px 28px rgba(0,0,0,0.45)'
+                                            : sec.data?.boxShadow === 'subtle'
+                                            ? '0 2px 8px rgba(0,0,0,0.1)'
+                                            : undefined,
+                                        backdropFilter: (sec.data?.boxBackdropBlur ?? true) ? 'blur(8px)' : undefined,
+                                        maxWidth: sec.data?.boxMaxWidth && sec.data?.boxMaxWidth !== '100%' ? sec.data?.boxMaxWidth : '100%',
+                                        margin: '0 auto',
+                                      }}
+                                      className="transition-all duration-200"
+                                    >
+                                      <div
+                                        style={{
+                                          color:
+                                            (sec.data?.boxTextColor || 'gold') === 'gold'
+                                              ? '#f59e0b'
+                                              : sec.data?.boxTextColor === 'dark'
+                                              ? '#0f172a'
+                                              : '#ffffff',
+                                        }}
+                                        className="text-xs font-black tracking-wide uppercase mb-1"
+                                      >
+                                        {sec.title || 'Tiêu Đề Khối Văn Bản'}
+                                      </div>
+                                      <div
+                                        style={{
+                                          color: sec.data?.boxTextColor === 'dark' ? '#334155' : '#f1f5f9',
+                                        }}
+                                        className="text-[10px] leading-relaxed line-clamp-2"
+                                      >
+                                        Nội dung văn bản bên trong khung box sẽ hiển thị rõ nét, sắc sảo, chống bị chìm màu chữ trên website nền tối như Casino / Lô tô.
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            <WpRichTextEditor
+                              label="Soạn Thảo Nội Dung Văn Bản (CKEditor Chuẩn WordPress)"
+                              value={(sec.content !== undefined && sec.content !== '' ? sec.content : (sec.subtitle || ''))
+                                .replace(/\[\/?ux_text[^\]]*\]/gi, '')
+                                .replace(/\[title[^\]]*\]/gi, '')
+                              }
+                              onChange={(html) => {
+                                const cleanHtml = html
+                                  .replace(/\[\/?ux_text[^\]]*\]/gi, '')
+                                  .replace(/\[title[^\]]*\]/gi, '');
+                                handleUpdateSection(sec.id, {
+                                  content: cleanHtml,
+                                  subtitle: cleanHtml,
+                                });
+                              }}
+                              currentSite={currentSite}
+                              minHeight={250}
+                              placeholder="Nhập nội dung bài viết hoặc đoạn văn bản tại đây (hỗ trợ tải ảnh lên, lấy ảnh từ thư viện media, in đậm, in nghiêng, tiêu đề, danh sách, link, màu sắc...)"
                             />
+                          </div>
+                        ) : sec.type !== 'divider_gap' && (
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                                Mô Tả / Phụ Đề
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setRichEditorActive((prev) => ({
+                                    ...prev,
+                                    [sec.id]: !prev[sec.id],
+                                  }))
+                                }
+                                className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                              >
+                                <Sparkles className="w-3 h-3 text-amber-500" />
+                                <span>{richEditorActive[sec.id] ? 'Dùng ô chữ thường' : 'Mở CKEditor Trực Quan'}</span>
+                              </button>
+                            </div>
+                            {richEditorActive[sec.id] ? (
+                              <WpRichTextEditor
+                                label="Soạn Thảo Phụ Đề (CKEditor)"
+                                value={sec.subtitle || sec.content || ''}
+                                onChange={(html) =>
+                                  handleUpdateSection(sec.id, {
+                                    subtitle: html,
+                                    content: html,
+                                  })
+                                }
+                                currentSite={currentSite}
+                                minHeight={180}
+                              />
+                            ) : (
+                              <textarea
+                                rows={2}
+                                value={sec.subtitle || sec.content || ''}
+                                onChange={(e) => handleUpdateSection(sec.id, { subtitle: e.target.value, content: e.target.value })}
+                                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-900 outline-hidden focus:border-blue-500"
+                              />
+                            )}
                           </div>
                         )}
                       </>
@@ -1424,6 +3044,27 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
                           </span>
                         </div>
 
+                        {/* Mẹo chỉnh khoảng cách khi đặt các Message Box kế nhau */}
+                        <div className="p-3 bg-blue-950/60 border border-blue-500/30 rounded-xl text-blue-200 text-xs flex items-start gap-2.5">
+                          <span className="text-base shrink-0 mt-0.5">💡</span>
+                          <div className="space-y-1">
+                            <span className="font-bold text-white block">
+                              Mẹo chỉnh khoảng cách khi đặt 2 Message Box kề nhau:
+                            </span>
+                            <div className="text-[11px] text-blue-200/90 leading-relaxed space-y-0.5">
+                              <div>
+                                • Cách 1: Tại mục <strong>Khoảng Cách (Padding)</strong> của cả 2 khối ở trên, chọn <strong>"Sát nhau / Không đệm (0px)"</strong> hoặc <strong>"Cực gọn (10px)"</strong>.
+                              </div>
+                              <div>
+                                • Cách 2: Bấm <strong>"⚙ Tùy chỉnh Top/Bottom"</strong> ở trên: Đặt Đệm Dưới của hộp trên = 0px và Đệm Trên của hộp dưới = 0px để nối dính liền vào nhau.
+                              </div>
+                              <div>
+                                • Cách 3: Bỏ chọn <em>"Bọc trong Section &amp; Row"</em> nếu bạn muốn 2 hộp nối tiếp nhau không qua thẻ bao ngoài của Flatsome.
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
                         {/* 1. BG Image */}
                         <div className="space-y-2">
                           <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
@@ -1457,6 +3098,9 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
                                   type="file"
                                   accept="image/*"
                                   className="hidden"
+                                  onClick={(e) => {
+                                    (e.target as HTMLInputElement).value = '';
+                                  }}
                                   onChange={(e) => {
                                     if (e.target.files?.[0]) {
                                       handleFileSelect(sec.id, e.target.files[0]);
@@ -1935,13 +3579,12 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
                                 </div>
                                 <textarea
                                   rows={2}
-                                  value={sec.content !== undefined ? sec.content : (sec.subtitle || sec.title || '')}
+                                  value={sec.content !== undefined ? sec.content : (sec.subtitle || '')}
                                   placeholder="Nhập thông điệp nổi bật, thông báo khuyến mãi, sự kiện... (Hoặc để trống)"
                                   onChange={(e) => {
                                     handleUpdateSection(sec.id, {
                                       content: e.target.value,
                                       subtitle: e.target.value,
-                                      title: e.target.value,
                                     });
                                   }}
                                   className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white outline-hidden focus:border-blue-500"
@@ -2082,7 +3725,7 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
                                   </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                   <div>
                                     <label className="text-[10px] text-slate-400 mb-0.5 block">Màu Sắc Nút</label>
                                     <select
@@ -2135,27 +3778,46 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
                                       <option value="large">Lớn (Large)</option>
                                     </select>
                                   </div>
+                                </div>
 
-                                  <div>
-                                    <label className="text-[10px] text-amber-400 font-medium mb-0.5 block flex items-center gap-1">
-                                      <span>✨ Hiệu Ứng Nút</span>
+                                {/* Hiệu Ứng Nút Bấm 1 (Hoạt họa thu hút click) */}
+                                <div className="space-y-1.5 pt-2 border-t border-slate-700/60">
+                                  <div className="flex items-center justify-between">
+                                    <label className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                                      <span>✨ Hiệu Ứng Nút Bấm (Button Animation)</span>
                                     </label>
-                                    <select
-                                      value={sec.data?.button1Animation || ''}
-                                      onChange={(e) => {
-                                        handleUpdateSection(sec.id, {
-                                          data: { ...(sec.data || {}), hasButton1: true, button1Animation: e.target.value },
-                                        });
-                                      }}
-                                      className="w-full bg-slate-900 border border-amber-500/40 focus:border-amber-400 rounded-lg px-2 py-1.5 text-xs text-amber-300 outline-hidden font-medium"
-                                    >
-                                      <option value="">Tĩnh (Không hiệu ứng)</option>
-                                      <option value="shimmer">⚡ Làn Mây Quét Sáng (Shimmer)</option>
-                                      <option value="shake">📳 Rung Lắc Gây Chú Ý (Shake)</option>
-                                      <option value="pulse">💓 Nhịp Thở Phóng To (Pulse)</option>
-                                      <option value="glow">🌟 Phát Sáng Hào Quang (Glow)</option>
-                                      <option value="combo">🔥 VIP: Làn Mây + Rung Lắc</option>
-                                    </select>
+                                    <span className="text-[10px] text-slate-400">Rung lắc, lan tỏa màu, hào quang để tăng CTR</span>
+                                  </div>
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5">
+                                    {[
+                                      { id: '', label: 'Tĩnh', icon: '⏹️', desc: 'Không hiệu ứng' },
+                                      { id: 'shake', label: 'Rung Lắc', icon: '📳', desc: 'Lắc rung chú ý' },
+                                      { id: 'ripple', label: 'Lan Tỏa Màu', icon: '🌊', desc: 'Sóng màu tỏa ra' },
+                                      { id: 'glow', label: 'Hào Quang', icon: '🌟', desc: 'Phát sáng Neon' },
+                                      { id: 'shimmer', label: 'Quét Sáng', icon: '⚡', desc: 'Làn mây sáng' },
+                                      { id: 'pulse', label: 'Nhịp Thở', icon: '💓', desc: 'Phóng to thu nhỏ' },
+                                      { id: 'combo', label: 'Combo VIP', icon: '🔥', desc: 'Rung + Lan tỏa' },
+                                    ].map((anim) => (
+                                      <button
+                                        key={anim.id}
+                                        type="button"
+                                        onClick={() => {
+                                          handleUpdateSection(sec.id, {
+                                            data: { ...(sec.data || {}), hasButton1: true, button1Animation: anim.id },
+                                          });
+                                        }}
+                                        className={`p-2 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                                          (sec.data?.button1Animation || '') === anim.id
+                                            ? 'border-amber-400 bg-amber-500/25 text-white font-bold shadow-xs ring-1 ring-amber-400/40'
+                                            : 'border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-slate-300'
+                                        }`}
+                                      >
+                                        <span className="text-base">{anim.icon}</span>
+                                        <span className="text-xs font-semibold">{anim.label}</span>
+                                        <span className="text-[9px] text-slate-400 font-normal">{anim.desc}</span>
+                                      </button>
+                                    ))}
                                   </div>
                                 </div>
                               </div>
@@ -2276,8 +3938,325 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
                                     </select>
                                   </div>
                                 </div>
+
+                                {/* Hiệu Ứng Nút Bấm 2 (Hoạt họa thu hút click) */}
+                                <div className="space-y-1.5 pt-2 border-t border-slate-700/60">
+                                  <div className="flex items-center justify-between">
+                                    <label className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                                      <span>✨ Hiệu Ứng Nút Bấm 2 (Hoạt Họa Bắt Mắt)</span>
+                                    </label>
+                                    <span className="text-[10px] text-slate-400">Rung lắc, lan tỏa màu, hào quang để tăng CTR</span>
+                                  </div>
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5">
+                                    {[
+                                      { id: '', label: 'Tĩnh', icon: '⏹️', desc: 'Không hiệu ứng' },
+                                      { id: 'shake', label: 'Rung Lắc', icon: '📳', desc: 'Lắc rung chú ý' },
+                                      { id: 'ripple', label: 'Lan Tỏa Màu', icon: '🌊', desc: 'Sóng màu tỏa ra' },
+                                      { id: 'glow', label: 'Hào Quang', icon: '🌟', desc: 'Phát sáng Neon' },
+                                      { id: 'shimmer', label: 'Quét Sáng', icon: '⚡', desc: 'Làn mây sáng' },
+                                      { id: 'pulse', label: 'Nhịp Thở', icon: '💓', desc: 'Phóng to thu nhỏ' },
+                                      { id: 'combo', label: 'Combo VIP', icon: '🔥', desc: 'Rung + Lan tỏa' },
+                                    ].map((anim) => (
+                                      <button
+                                        key={anim.id}
+                                        type="button"
+                                        onClick={() => {
+                                          handleUpdateSection(sec.id, {
+                                            data: { ...(sec.data || {}), hasButton2: true, button2Animation: anim.id },
+                                          });
+                                        }}
+                                        className={`p-2 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                                          (sec.data?.button2Animation || '') === anim.id
+                                            ? 'border-amber-400 bg-amber-500/25 text-white font-bold shadow-xs ring-1 ring-amber-400/40'
+                                            : 'border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-slate-300'
+                                        }`}
+                                      >
+                                        <span className="text-base">{anim.icon}</span>
+                                        <span className="text-xs font-semibold">{anim.label}</span>
+                                        <span className="text-[9px] text-slate-400 font-normal">{anim.desc}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
                               </div>
                             )}
+                          </div>
+                        </div>
+
+                        {/* 7. Cấu Hình Riêng Cho Mobile (Vị Trí Nút & Đệm Lề) */}
+                        <div className="bg-slate-950 p-4 rounded-xl border border-indigo-500/30 space-y-4 pt-3.5">
+                          <div className="flex items-center justify-between border-b border-indigo-900/50 pb-2.5">
+                            <div className="flex items-center gap-2">
+                              <Smartphone className="w-4 h-4 text-indigo-400" />
+                              <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider">
+                                📱 Cài Đặt Riêng Cho Mobile (Vị Trí Nút &amp; Đệm Lề)
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/30 font-mono">
+                              @media &le; 549px
+                            </span>
+                          </div>
+
+                          {/* 1. Vị Trí & Căn Lề Nút Bấm Trên Mobile */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+                                Vị Trí Nút Bấm Trên Mobile (Button Alignment)
+                              </label>
+                              <span className="text-[10px] text-slate-400">Tránh đè chữ trên banner</span>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              {[
+                                { id: 'right', label: '👉 Căn Phải', desc: 'Sát lề phải banner' },
+                                { id: 'center', label: '🎯 Căn Giữa', desc: 'Canh giữa màn hình' },
+                                { id: 'left', label: '👈 Căn Trái', desc: 'Sát lề trái' },
+                                { id: 'hidden', label: '🚫 Ẩn Nút', desc: 'Nếu ảnh đã vẽ nút' },
+                              ].map((pos) => (
+                                <button
+                                  key={pos.id}
+                                  type="button"
+                                  onClick={() => {
+                                    handleUpdateSection(sec.id, {
+                                      data: { ...(sec.data || {}), mobileBtnAlign: pos.id },
+                                    });
+                                  }}
+                                  className={`p-2 rounded-xl border text-left transition cursor-pointer ${
+                                    (sec.data?.mobileBtnAlign || 'right') === pos.id
+                                      ? 'border-indigo-400 bg-indigo-600/30 text-white font-bold shadow-2xs'
+                                      : 'border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-300'
+                                  }`}
+                                >
+                                  <div className="text-xs">{pos.label}</div>
+                                  <div className="text-[9px] text-slate-400 font-normal">{pos.desc}</div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* 2. Tinh Chỉnh Nút: Kích Cỡ, Lùi Lề Phải & Đẩy Lề Trên */}
+                          {sec.data?.mobileBtnAlign !== 'hidden' && (
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-slate-900/80 border border-slate-800 rounded-xl animate-in fade-in duration-100">
+                              {/* Kích Cỡ Nút Mobile */}
+                              <div>
+                                <label className="text-[10px] font-semibold text-slate-300 block mb-1">
+                                  Kích Cỡ Nút (Mobile Size)
+                                </label>
+                                <select
+                                  value={sec.data?.mobileBtnSize || 'compact'}
+                                  onChange={(e) => {
+                                    handleUpdateSection(sec.id, {
+                                      data: { ...(sec.data || {}), mobileBtnSize: e.target.value },
+                                    });
+                                  }}
+                                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white outline-hidden focus:border-indigo-500 cursor-pointer"
+                                >
+                                  <option value="compact">Thu nhỏ gọn (Font 12px - Khuyên dùng)</option>
+                                  <option value="small">Vừa vặn (Font 13px)</option>
+                                  <option value="normal">Giữ nguyên kích cỡ như PC</option>
+                                </select>
+                              </div>
+
+                              {/* Lùi Vào Từ Mép Phải */}
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <label className="text-[10px] font-semibold text-slate-300">Lùi Vào Từ Mép Phải</label>
+                                  <span className="text-[10px] font-mono text-indigo-400 font-bold">
+                                    {sec.data?.mobileBtnOffsetRight || 0}px
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={100}
+                                    step={5}
+                                    value={sec.data?.mobileBtnOffsetRight || 0}
+                                    onChange={(e) => {
+                                      const val = Math.max(0, parseInt(e.target.value, 10) || 0);
+                                      handleUpdateSection(sec.id, {
+                                        data: { ...(sec.data || {}), mobileBtnOffsetRight: val },
+                                      });
+                                    }}
+                                    className="w-16 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white text-center font-mono outline-hidden focus:border-indigo-500"
+                                  />
+                                  <div className="flex gap-1 flex-1">
+                                    {[0, 10, 15, 20].map((v) => (
+                                      <button
+                                        key={v}
+                                        type="button"
+                                        onClick={() => {
+                                          handleUpdateSection(sec.id, {
+                                            data: { ...(sec.data || {}), mobileBtnOffsetRight: v },
+                                          });
+                                        }}
+                                        className={`flex-1 py-1 text-[10px] rounded border transition cursor-pointer ${
+                                          (sec.data?.mobileBtnOffsetRight || 0) === v
+                                            ? 'border-indigo-400 bg-indigo-500/30 text-white font-bold'
+                                            : 'border-slate-800 bg-slate-950 hover:bg-slate-800 text-slate-400'
+                                        }`}
+                                      >
+                                        {v}px
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Đẩy Xuống Từ Trên (Margin Top) */}
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <label className="text-[10px] font-semibold text-slate-300">Đẩy Xuống (Margin Top)</label>
+                                  <span className="text-[10px] font-mono text-indigo-400 font-bold">
+                                    {sec.data?.mobileBtnMarginTop || 0}px
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={100}
+                                    step={5}
+                                    value={sec.data?.mobileBtnMarginTop || 0}
+                                    onChange={(e) => {
+                                      const val = Math.max(0, parseInt(e.target.value, 10) || 0);
+                                      handleUpdateSection(sec.id, {
+                                        data: { ...(sec.data || {}), mobileBtnMarginTop: val },
+                                      });
+                                    }}
+                                    className="w-16 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white text-center font-mono outline-hidden focus:border-indigo-500"
+                                  />
+                                  <div className="flex gap-1 flex-1">
+                                    {[0, 10, 20, 30].map((v) => (
+                                      <button
+                                        key={v}
+                                        type="button"
+                                        onClick={() => {
+                                          handleUpdateSection(sec.id, {
+                                            data: { ...(sec.data || {}), mobileBtnMarginTop: v },
+                                          });
+                                        }}
+                                        className={`flex-1 py-1 text-[10px] rounded border transition cursor-pointer ${
+                                          (sec.data?.mobileBtnMarginTop || 0) === v
+                                            ? 'border-indigo-400 bg-indigo-500/30 text-white font-bold'
+                                            : 'border-slate-800 bg-slate-950 hover:bg-slate-800 text-slate-400'
+                                        }`}
+                                      >
+                                        {v}px
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 3. Chiều Cao Hộp Trên Mobile (Min-Height) & Đệm Lề 2 Bên (Container Gutter) */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800">
+                            {/* Chiều Cao Hộp Trên Mobile */}
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <label className="text-[11px] font-semibold text-slate-300 block">
+                                  Chiều Cao Khối Mobile (Min-Height)
+                                </label>
+                                <span className="text-[10px] text-slate-400">Khuyên dùng 140px</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={500}
+                                  step={10}
+                                  value={sec.data?.mobileMinHeight || ''}
+                                  placeholder="Mặc định (Auto)"
+                                  onChange={(e) => {
+                                    const val = e.target.value ? parseInt(e.target.value, 10) : '';
+                                    handleUpdateSection(sec.id, {
+                                      data: { ...(sec.data || {}), mobileMinHeight: val },
+                                    });
+                                  }}
+                                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white outline-hidden focus:border-indigo-500 font-mono"
+                                />
+                                <div className="flex gap-1 shrink-0">
+                                  {[
+                                    { label: '140px', val: 140 },
+                                    { label: '180px', val: 180 },
+                                    { label: 'Auto', val: '' },
+                                  ].map((btn) => (
+                                    <button
+                                      key={btn.label}
+                                      type="button"
+                                      onClick={() => {
+                                        handleUpdateSection(sec.id, {
+                                          data: { ...(sec.data || {}), mobileMinHeight: btn.val },
+                                        });
+                                      }}
+                                      className="px-2 py-1 text-[10px] rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
+                                    >
+                                      {btn.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Đệm Lề 2 Bên Trên Mobile (Container Gutter) */}
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <label className="text-[11px] font-semibold text-slate-300 block">
+                                  Đệm Lề 2 Bên (Container Gutter)
+                                </label>
+                                <span className="text-[10px] font-mono text-indigo-400 font-bold">
+                                  {sec.data?.mobileGutter !== undefined ? sec.data.mobileGutter : 15}px
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={60}
+                                  step={5}
+                                  value={sec.data?.mobileGutter !== undefined ? sec.data.mobileGutter : 15}
+                                  onChange={(e) => {
+                                    const val = Math.max(0, parseInt(e.target.value, 10) || 0);
+                                    handleUpdateSection(sec.id, {
+                                      data: { ...(sec.data || {}), mobileGutter: val },
+                                    });
+                                  }}
+                                  className="w-16 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white text-center font-mono outline-hidden focus:border-indigo-500"
+                                />
+                                <div className="flex gap-1 flex-1">
+                                  {[
+                                    { label: '15px (Chuẩn)', val: 15 },
+                                    { label: '10px', val: 10 },
+                                    { label: '20px', val: 20 },
+                                    { label: '0px (Tràn)', val: 0 },
+                                  ].map((preset) => (
+                                    <button
+                                      key={preset.label}
+                                      type="button"
+                                      onClick={() => {
+                                        handleUpdateSection(sec.id, {
+                                          data: { ...(sec.data || {}), mobileGutter: preset.val },
+                                        });
+                                      }}
+                                      className={`flex-1 py-1 text-[10px] rounded border transition cursor-pointer ${
+                                        (sec.data?.mobileGutter !== undefined ? sec.data.mobileGutter : 15) === preset.val
+                                          ? 'border-indigo-400 bg-indigo-500/30 text-white font-bold'
+                                          : 'border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-400'
+                                      }`}
+                                    >
+                                      {preset.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              <p className="text-[9px] text-slate-400">
+                                {(sec.data?.mobileGutter !== undefined ? sec.data.mobileGutter : 15) === 0
+                                  ? 'Khối chạm sát 2 mép viền màn hình.'
+                                  : `Khối thụt vào ${sec.data?.mobileGutter !== undefined ? sec.data.mobileGutter : 15}px hai bên, bo tròn góc đẹp và chống tràn viền.`}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -2347,6 +4326,9 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
                                   type="file"
                                   accept="image/*"
                                   className="hidden"
+                                  onClick={(e) => {
+                                    (e.target as HTMLInputElement).value = '';
+                                  }}
                                   onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (file) handleFileSelect(sec.id, file);
@@ -3103,7 +5085,7 @@ export const Step3HomepageBuilder: React.FC<Step3HomepageBuilderProps> = ({
           onClick={onPrevStep}
           className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
         >
-          ← Quay lại Bước 4 (Cấu Hình Menu)
+          ← Quay lại Bước 5 (Cấu Hình Menu)
         </button>
 
         <div className="flex items-center gap-2.5">

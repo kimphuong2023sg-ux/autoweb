@@ -37,6 +37,7 @@ export declare class BridgeService {
         locations?: string[];
         styling?: any;
     }): Promise<any>;
+    saveSubpageStyling(siteUrl: string, auth: AuthParams, styling: any): Promise<any>;
     deployAll(siteUrl: string, auth: AuthParams, payload: {
         themeMods: any;
         footerConfig: FooterConfig;
@@ -52,12 +53,26 @@ export declare class BridgeService {
     private getWpSession;
     uploadMedia(siteUrl: string, auth: AuthParams, payload: any): Promise<any>;
     updateMedia(siteUrl: string, auth: AuthParams, payload: any): Promise<any>;
-    listMedia(siteUrl: string, auth: AuthParams): Promise<any>;
+    setFavicon(siteUrl: string, auth: AuthParams, payload: any): Promise<any>;
+    listMedia(siteUrl: string, auth: AuthParams): Promise<{
+        success: boolean;
+        media: any[];
+        total: any;
+    }>;
     deleteMedia(siteUrl: string, auth: AuthParams, targetIds: number | number[]): Promise<any>;
-    pushPluginCode(siteUrl: string, auth: AuthParams): Promise<any>;
+    pushPluginCode(siteUrl: string, auth: AuthParams): Promise<{
+        success: boolean;
+        message: string;
+        inspect: any;
+    }>;
     autoInstallPlugin(siteUrl: string, auth: AuthParams): Promise<{
         success: boolean;
         message: string;
+        inspect: any;
+    }>;
+    installFlatsomeTheme(siteUrl: string, auth: AuthParams): Promise<{
+        success: boolean;
+        message: any;
         inspect: any;
     }>;
     private handleError;

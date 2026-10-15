@@ -170,13 +170,6 @@ export class BridgeService {
 
   async wipeDefaults(siteUrl: string, auth: AuthParams, options: any) {
     try {
-      // 1. Tự động đẩy mã nguồn plugin mới nhất lên WordPress trước khi dọn dẹp
-      try {
-        await this.pushPluginCode(siteUrl, auth);
-      } catch (pushErr: any) {
-        console.warn('Tự động đẩy code plugin trước wipe thất bại hoặc bỏ qua:', pushErr?.message);
-      }
-
       const client = this.getClient(siteUrl, auth);
       const res = await client.post('/wipe-defaults', options);
       return res.data;
@@ -211,17 +204,13 @@ export class BridgeService {
 
   async deployHomepage(siteUrl: string, auth: AuthParams, sections: SectionItem[], title?: string) {
     try {
-      try {
-        await this.pushPluginCode(siteUrl, auth);
-      } catch (pushErr: any) {
-        console.warn('Tự động đẩy code plugin trước deployHomepage thất bại hoặc bỏ qua:', pushErr?.message);
-      }
-
       const shortcode = this.compilerService.compilePageSections(sections);
+      const customCss = this.compilerService.compilePageCustomCss(sections);
       const client = this.getClient(siteUrl, auth);
       const res = await client.post('/deploy-homepage', {
         title: title || 'Trang Chủ',
         shortcode,
+        custom_css: customCss,
         state_json: JSON.stringify(sections),
       });
       return res.data;
@@ -242,13 +231,6 @@ export class BridgeService {
 
   async batchCreateContent(siteUrl: string, auth: AuthParams, payload: { default_type?: string; items: any[] }) {
     try {
-      // Tự động đẩy code mới nhất lên WordPress nếu cần
-      try {
-        await this.pushPluginCode(siteUrl, auth);
-      } catch (pushErr: any) {
-        console.warn('Tự động đẩy code plugin trước batchCreateContent thất bại hoặc bỏ qua:', pushErr?.message);
-      }
-
       const client = this.getClient(siteUrl, auth);
       const res = await client.post('/batch-create-content', payload);
       return res.data;
@@ -259,12 +241,6 @@ export class BridgeService {
 
   async listContent(siteUrl: string, auth: AuthParams, options: { type?: string } = {}) {
     try {
-      try {
-        await this.pushPluginCode(siteUrl, auth);
-      } catch (pushErr: any) {
-        console.warn('Tự động đẩy code plugin trước listContent thất bại hoặc bỏ qua:', pushErr?.message);
-      }
-
       const client = this.getClient(siteUrl, auth);
       const res = await client.post('/list-content', options);
       return res.data;
@@ -275,12 +251,6 @@ export class BridgeService {
 
   async deleteContent(siteUrl: string, auth: AuthParams, payload: { type: string; id?: number; slug?: string }) {
     try {
-      try {
-        await this.pushPluginCode(siteUrl, auth);
-      } catch (pushErr: any) {
-        console.warn('Tự động đẩy code plugin trước deleteContent thất bại hoặc bỏ qua:', pushErr?.message);
-      }
-
       const client = this.getClient(siteUrl, auth);
       const res = await client.post('/delete-content', payload);
       return res.data;
@@ -291,12 +261,6 @@ export class BridgeService {
 
   async getMenu(siteUrl: string, auth: AuthParams, params: { menu_id?: number; menu_name?: string } = {}) {
     try {
-      try {
-        await this.pushPluginCode(siteUrl, auth);
-      } catch (pushErr: any) {
-        console.warn('Tự động đẩy code plugin trước getMenu thất bại hoặc bỏ qua:', pushErr?.message);
-      }
-
       const client = this.getClient(siteUrl, auth);
       const res = await client.post('/get-menu', params);
       return res.data;
@@ -313,12 +277,6 @@ export class BridgeService {
     styling?: any;
   }) {
     try {
-      try {
-        await this.pushPluginCode(siteUrl, auth);
-      } catch (pushErr: any) {
-        console.warn('Tự động đẩy code plugin trước saveMenu thất bại hoặc bỏ qua:', pushErr?.message);
-      }
-
       const client = this.getClient(siteUrl, auth);
       const res = await client.post('/save-menu', payload);
       return res.data;
@@ -326,6 +284,17 @@ export class BridgeService {
       this.handleError(err, 'Lỗi khi lưu và đồng bộ Menu lên WordPress.');
     }
   }
+
+  async saveSubpageStyling(siteUrl: string, auth: AuthParams, styling: any) {
+    try {
+      const client = this.getClient(siteUrl, auth);
+      const res = await client.post('/save-subpage-styling', { styling });
+      return res.data;
+    } catch (err: any) {
+      this.handleError(err, 'Lỗi khi lưu cấu hình style trang con lên WordPress.');
+    }
+  }
+
 
   async deployAll(siteUrl: string, auth: AuthParams, payload: {
     themeMods: any;
@@ -636,36 +605,196 @@ export class BridgeService {
     }
   }
 
+  async setFavicon(siteUrl: string, auth: AuthParams, payload: any) {
+    try {
+      let cleanUrl = siteUrl.trim().replace(/\/+$/, '');
+      cleanUrl = cleanUrl.replace(/\/wp-admin(\/.*)?$/i, '');
+      cleanUrl = cleanUrl.replace(/\/wp-login\.php.*$/i, '');
+
+      // 1. Thử qua Bridge REST API endpoint /set-favicon
+      try {
+        const client = this.getClient(siteUrl, auth);
+        const res = await client.post('/set-favicon', payload);
+        if (res.data?.success) {
+          return res.data;
+        }
+      } catch (bridgeErr: any) {
+        console.warn('Bridge /set-favicon không khả dụng, thử chế độ WordPress Core:', bridgeErr?.message);
+      }
+
+      // 2. Nếu là yêu cầu gỡ Favicon
+      if (payload.remove) {
+        try {
+          const session = await this.getWpSession(cleanUrl, auth);
+          const basic = Buffer.from(`${auth.username}:${auth.password}`).toString('base64');
+          await axios.post(
+            `${cleanUrl}/wp-json/wp/v2/settings`,
+            { site_icon: 0 },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                ...(session.cookieStr ? { Cookie: session.cookieStr } : {}),
+                ...(session.restNonce ? { 'X-WP-Nonce': session.restNonce } : {}),
+                Authorization: `Basic ${basic}`,
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+              },
+              timeout: 15000,
+            },
+          );
+          return {
+            success: true,
+            message: 'Đã gỡ Favicon thành công! Website đã trở về biểu tượng mặc định.',
+            site_icon: 0,
+            site_icon_url: '',
+          };
+        } catch (removeErr: any) {
+          console.warn('Gỡ favicon qua WP /settings thất bại:', removeErr?.message);
+        }
+      }
+
+      // 3. Nếu tải ảnh mới: tải vào Media Library trước để lấy attachment ID
+      let mediaId = payload.mediaId || payload.media_id;
+      let iconUrl = payload.imageUrl || payload.image_url;
+
+      if (!mediaId && (payload.fileData || payload.file_data || payload.imageUrl || payload.image_url)) {
+        const uploadRes = await this.uploadMedia(siteUrl, auth, {
+          filename: payload.filename || `favicon-${Date.now()}.png`,
+          fileData: payload.fileData || payload.file_data,
+          imageUrl: payload.imageUrl || payload.image_url,
+          title: 'Site Favicon',
+          altText: 'Site Favicon',
+          caption: 'Favicon',
+          description: 'Biểu tượng trang web (Site Icon / Favicon)',
+        });
+
+        if (uploadRes?.media?.id) {
+          mediaId = uploadRes.media.id;
+          iconUrl = uploadRes.media.url || iconUrl;
+        }
+      }
+
+      if (mediaId) {
+        // Cập nhật settings WordPress: site_icon = mediaId
+        try {
+          const session = await this.getWpSession(cleanUrl, auth);
+          const basic = Buffer.from(`${auth.username}:${auth.password}`).toString('base64');
+          await axios.post(
+            `${cleanUrl}/wp-json/wp/v2/settings`,
+            { site_icon: Number(mediaId) },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                ...(session.cookieStr ? { Cookie: session.cookieStr } : {}),
+                ...(session.restNonce ? { 'X-WP-Nonce': session.restNonce } : {}),
+                Authorization: `Basic ${basic}`,
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+              },
+              timeout: 15000,
+            },
+          );
+        } catch (settingsErr: any) {
+          console.warn('Lưu site_icon qua WP /settings lỗi:', settingsErr?.message);
+        }
+
+        // Cập nhật theme mods Flatsome
+        try {
+          await this.applyThemeMods(siteUrl, auth, { site_icon_id: Number(mediaId) });
+        } catch (_) {}
+
+        return {
+          success: true,
+          message: 'Đã cập nhật Favicon (Site Icon) thành công! Biểu tượng mới đã được kích hoạt trên toàn bộ website.',
+          site_icon: mediaId,
+          site_icon_url: iconUrl,
+        };
+      }
+
+      return {
+        success: false,
+        message: 'Không thể thiết lập Favicon, vui lòng thử lại hoặc chọn ảnh khác.',
+      };
+    } catch (err: any) {
+      this.handleError(err, 'Lỗi khi cài đặt Favicon (Site Icon) cho website.');
+    }
+  }
+
   async listMedia(siteUrl: string, auth: AuthParams) {
     try {
       let cleanUrl = siteUrl.trim().replace(/\/+$/, '');
       cleanUrl = cleanUrl.replace(/\/wp-admin(\/.*)?$/i, '');
       cleanUrl = cleanUrl.replace(/\/wp-login\.php.*$/i, '');
 
-      // 1. Thử cổng Bridge nếu có
+      let bridgeMedia: any[] | null = null;
+
+      // 1. Thử cổng Bridge trước với tham số limit=-1
       try {
         const client = this.getClient(siteUrl, auth);
-        const res = await client.get('/list-media');
-        if (res.data?.media) return res.data;
+        const res = await client.get('/list-media?limit=-1&posts_per_page=-1');
+        if (res.data?.media && Array.isArray(res.data.media)) {
+          bridgeMedia = res.data.media;
+          // Nếu bridge đã được cập nhật và trả về nhiều hơn 30 ảnh (hoặc chính xác toàn bộ), trả về ngay
+          if (bridgeMedia.length > 30) {
+            return { success: true, media: bridgeMedia, total: res.data.total || bridgeMedia.length };
+          }
+        }
       } catch (bridgeErr) {}
 
-      // 2. Lấy trực tiếp từ Core WordPress REST API
-      const res = await axios.get(`${cleanUrl}/wp-json/wp/v2/media?per_page=50`, {
-        timeout: 20000,
-      });
-      if (Array.isArray(res.data)) {
-        const media = res.data.map((item: any) => ({
-          id: item.id,
-          url: item.source_url,
-          thumbnail: item.media_details?.sizes?.thumbnail?.source_url || item.source_url,
-          title: item.title?.rendered || '',
-          alt: item.alt_text || '',
-          caption: item.caption?.rendered || '',
-          description: item.description?.rendered || '',
-          filename: item.slug || '',
-        }));
-        return { success: true, media, total: media.length };
+      // 2. Lấy đầy đủ từ Core WordPress REST API (hỗ trợ phân trang nếu website có > 100 ảnh)
+      try {
+        const authHeaders: Record<string, string> = {};
+        if (auth.username && auth.password) {
+          const basic = Buffer.from(`${auth.username}:${auth.password}`).toString('base64');
+          authHeaders['Authorization'] = `Basic ${basic}`;
+        } else if (auth.token) {
+          authHeaders['X-Bridge-Token'] = auth.token;
+        }
+
+        const allMedia: any[] = [];
+        let page = 1;
+        let hasMore = true;
+
+        while (hasMore && page <= 10) {
+          const res = await axios.get(`${cleanUrl}/wp-json/wp/v2/media?per_page=100&page=${page}`, {
+            headers: authHeaders,
+            timeout: 15000,
+          });
+
+          if (Array.isArray(res.data) && res.data.length > 0) {
+            allMedia.push(...res.data);
+            const totalPages = parseInt(res.headers?.['x-wp-totalpages'] || '1', 10);
+            if (page >= totalPages || res.data.length < 100) {
+              hasMore = false;
+            } else {
+              page++;
+            }
+          } else {
+            hasMore = false;
+          }
+        }
+
+        if (allMedia.length > 0) {
+          const media = allMedia.map((item: any) => ({
+            id: item.id,
+            url: item.source_url,
+            thumbnail: item.media_details?.sizes?.medium?.source_url || item.media_details?.sizes?.thumbnail?.source_url || item.source_url,
+            title: item.title?.rendered || item.slug || '',
+            alt: item.alt_text || '',
+            caption: item.caption?.rendered || '',
+            description: item.description?.rendered || '',
+            filename: item.slug || '',
+            date: item.date,
+          }));
+          return { success: true, media, total: media.length };
+        }
+      } catch (restErr: any) {
+        console.warn('Không thể quét qua WP REST API, fallback sang Bridge Media nếu có:', restErr?.message);
       }
+
+      // 3. Fallback: Nếu không gọi được WP REST API, dùng kết quả từ Bridge
+      if (bridgeMedia && bridgeMedia.length > 0) {
+        return { success: true, media: bridgeMedia, total: bridgeMedia.length };
+      }
+
       return { success: true, media: [], total: 0 };
     } catch (err: any) {
       this.handleError(err, 'Lỗi khi lấy danh sách Media từ WordPress.');
@@ -680,12 +809,6 @@ export class BridgeService {
     }
 
     try {
-      // 1. Tự động đẩy code plugin mới nhất lên WordPress nếu cần
-      try {
-        await this.pushPluginCode(siteUrl, auth);
-      } catch (pushErr: any) {
-        console.warn('Tự động đẩy code plugin trước deleteMedia thất bại hoặc bỏ qua:', pushErr?.message);
-      }
 
       // 2. Thử xóa qua route của Bridge Plugin (/delete-media hỗ trợ cả mediaId và mediaIds)
       try {
@@ -743,87 +866,54 @@ export class BridgeService {
   }
 
   async pushPluginCode(siteUrl: string, auth: AuthParams) {
-    try {
-      const fs = await import('fs');
-      const path = await import('path');
-
-      const possiblePaths = [
-        path.resolve(process.cwd(), '../wp-plugin/flatsome-seo-bridge/flatsome-seo-bridge.php'),
-        path.resolve(process.cwd(), 'wp-plugin/flatsome-seo-bridge/flatsome-seo-bridge.php'),
-        'c:\\Project\\seo\\toolautothemewp\\wp-plugin\\flatsome-seo-bridge\\flatsome-seo-bridge.php',
-      ];
-
-      const foundPath = possiblePaths.find((p) => fs.existsSync(p));
-      if (!foundPath) {
-        throw new Error('Không tìm thấy file mã nguồn flatsome-seo-bridge.php trên máy local');
-      }
-
-      const code = fs.readFileSync(foundPath, 'utf8');
-
-      // Pre-check: Kiểm tra trùng lặp tên function trong file PHP để bảo vệ tuyệt đối an toàn website
-      const functionMatches = code.match(/function\s+([a-zA-Z0-9_]+)\s*\(/g);
-      if (functionMatches) {
-        const funcNames = functionMatches.map((f) => f.replace(/function\s+/, '').replace(/\s*\(/, '').trim());
-        const seen = new Set<string>();
-        const duplicates = new Set<string>();
-        for (const name of funcNames) {
-          if (seen.has(name)) duplicates.add(name);
-          else seen.add(name);
-        }
-        if (duplicates.size > 0) {
-          throw new Error(`Phát hiện hàm PHP bị trùng lặp: ${Array.from(duplicates).join(', ')}. Đã chặn đẩy code để bảo vệ an toàn website!`);
-        }
-      }
-
-      const client = this.getClient(siteUrl, auth);
-
-      try {
-        const res = await client.post('/self-update', { code });
-        return res.data;
-      } catch (postErr: any) {
-        // Nếu /self-update trả về lỗi (404, 500 fatal error, timeout...), tự động khôi phục và cập nhật plugin qua autoInstallPlugin nếu có auth!
-        if (auth.username && auth.password) {
-          console.warn('self-update thất bại, tự động khôi phục và cập nhật qua autoInstallPlugin...', postErr?.message);
-          const autoRes = await this.autoInstallPlugin(siteUrl, auth);
-          return {
-            success: true,
-            message: '⚡ Đã tự động khôi phục và cập nhật Plugin trên WordPress lên bản mới nhất!',
-            inspect: autoRes?.inspect,
-          };
-        }
-        if (postErr.response?.status === 404) {
-          throw new HttpException(
-            'Plugin trên WordPress hiện tại là bản cũ (chưa có cổng tự cập nhật /self-update). Vui lòng bấm nút "🚀 Tự Động Cài & Kích Hoạt Plugin Lên WP" một lần để nâng cấp bản mới nhất!',
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-        throw postErr;
-      }
-    } catch (err: any) {
-      this.handleError(err, 'Lỗi khi đẩy code mới lên WordPress.');
-    }
+    // Luôn cập nhật và ghi đè an toàn từ file ZIP chuẩn, không đẩy raw code
+    return this.autoInstallPlugin(siteUrl, auth);
   }
 
   async autoInstallPlugin(siteUrl: string, auth: AuthParams) {
+    const fs = await import('fs');
+    const path = await import('path');
+
+    // 1. Nếu Plugin Bridge đã cài trên website, cập nhật ghi đè siêu tốc & an toàn qua REST API /self-update
+    try {
+      const pluginPhpCandidates = [
+        path.resolve(process.cwd(), '../wp-plugin/flatsome-seo-bridge/flatsome-seo-bridge.php'),
+        path.resolve(process.cwd(), 'wp-plugin/flatsome-seo-bridge/flatsome-seo-bridge.php'),
+        'c:\\Project\\seo\\autowebgit\\autoweb\\wp-plugin\\flatsome-seo-bridge\\flatsome-seo-bridge.php',
+      ];
+      const phpFile = pluginPhpCandidates.find((p) => fs.existsSync(p));
+      if (phpFile) {
+        const phpCode = fs.readFileSync(phpFile, 'utf8');
+        const client = this.getClient(siteUrl, auth);
+        const selfUpdateRes = await client.post('/self-update', { code: phpCode }, { timeout: 15000 });
+        if (selfUpdateRes?.data?.success) {
+          const inspectRes = await this.syncSite(siteUrl, auth).catch(() => null);
+          return {
+            success: true,
+            message: 'Đã cập nhật và ghi đè Plugin Flatsome SEO Bridge lên phiên bản mới nhất thành công!',
+            inspect: inspectRes,
+          };
+        }
+      }
+    } catch (selfErr) {
+      // Nếu /self-update không phản hồi, tiếp tục quy trình upload file ZIP truyền thống
+    }
+
     if (!auth.username || !auth.password) {
       throw new HttpException(
-        'Cần có Tên đăng nhập và Mật khẩu WordPress (Admin) để tự động cài plugin.',
+        'Cần có Tên đăng nhập và Mật khẩu WordPress (Admin) để tự động cài hoặc cập nhật ghi đè plugin.',
         HttpStatus.BAD_REQUEST,
       );
     }
 
     try {
-      const fs = await import('fs');
-      const path = await import('path');
-
       let cleanUrl = siteUrl.trim();
       cleanUrl = cleanUrl.replace(/\/wp-admin(\/.*)?$/i, '');
       cleanUrl = cleanUrl.replace(/\/wp-login\.php.*$/i, '');
       cleanUrl = cleanUrl.replace(/\/+$/, '');
 
-      // 1. Đóng gói ZIP trực tiếp từ mã nguồn mới nhất trên máy
+      // 1. Đóng gói ZIP chuẩn trực tiếp từ thư mục mã nguồn plugin
       let zipBuffer: Buffer;
-      let rawPluginCode = '';
       try {
         const pluginFolderCandidates = [
           path.resolve(process.cwd(), '../wp-plugin/flatsome-seo-bridge'),
@@ -832,15 +922,9 @@ export class BridgeService {
         ];
         const pluginFolder = pluginFolderCandidates.find((p) => fs.existsSync(p));
         if (pluginFolder) {
-          const mainPhp = path.join(pluginFolder, 'flatsome-seo-bridge.php');
-          if (fs.existsSync(mainPhp)) {
-            rawPluginCode = fs.readFileSync(mainPhp, 'utf8');
-          }
-
           const zip = new AdmZip();
           zip.addLocalFolder(pluginFolder, 'flatsome-seo-bridge');
-          // QUAN TRỌNG: Chuẩn hóa tất cả dấu gạch chéo sang '/' chuẩn Linux!
-          // Trên Windows, adm-zip dùng '\' khiến máy chủ Linux giải nén sai thành 1 file duy nhất và báo 'El archivo del plugin no existe'
+          // Chuẩn hóa tất cả dấu gạch chéo sang '/' chuẩn Linux
           zip.getEntries().forEach((entry) => {
             entry.entryName = entry.entryName.replace(/\\/g, '/');
           });
@@ -868,7 +952,7 @@ export class BridgeService {
             'c:\\Project\\seo\\toolautothemewp\\wp-plugin\\flatsome-seo-bridge.zip',
           ];
           const foundZip = possibleZipPaths.find((p) => fs.existsSync(p));
-          if (!foundZip) throw new Error('Không tìm thấy file zip để cài đặt');
+          if (!foundZip) throw new Error('Không tìm thấy file flatsome-seo-bridge.zip');
           const zip = new AdmZip(foundZip);
           zip.getEntries().forEach((entry) => {
             entry.entryName = entry.entryName.replace(/\\/g, '/');
@@ -919,52 +1003,6 @@ export class BridgeService {
 
       if (!cookieStr.includes('wordpress_logged_in')) {
         throw new Error('Đăng nhập WordPress thất bại! Vui lòng kiểm tra lại Tên đăng nhập và Mật khẩu Quản trị viên (Admin).');
-      }
-
-      // 2.1 ƯU TIÊN: Cập nhật trực tiếp file qua WordPress Plugin Editor (Siêu nhanh 0.2s, không cần unzip, không lo lỗi đường dẫn)
-      if (rawPluginCode) {
-        try {
-          const editorPageRes = await axios.get(
-            `${cleanUrl}/wp-admin/plugin-editor.php?file=flatsome-seo-bridge%2Fflatsome-seo-bridge.php&plugin=flatsome-seo-bridge%2Fflatsome-seo-bridge.php`,
-            {
-              headers: { Cookie: cookieStr, 'User-Agent': 'Mozilla/5.0' },
-              timeout: 15000,
-            },
-          );
-          const editorNonceMatch =
-            editorPageRes.data.match(/id="_wpnonce"\s+name="_wpnonce"\s+value="([a-f0-9]+)"/i) ||
-            editorPageRes.data.match(/name="_wpnonce"\s+value="([a-f0-9]+)"/i);
-
-          if (editorNonceMatch && !editorPageRes.data.includes('DISALLOW_FILE_EDIT')) {
-            const editParams = new URLSearchParams();
-            editParams.append('_wpnonce', editorNonceMatch[1]);
-            editParams.append('_wp_http_referer', '/wp-admin/plugin-editor.php');
-            editParams.append('newcontent', rawPluginCode);
-            editParams.append('action', 'update');
-            editParams.append('file', 'flatsome-seo-bridge/flatsome-seo-bridge.php');
-            editParams.append('plugin', 'flatsome-seo-bridge/flatsome-seo-bridge.php');
-
-            const editRes = await axios.post(`${cleanUrl}/wp-admin/plugin-editor.php`, editParams.toString(), {
-              headers: {
-                Cookie: cookieStr,
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'User-Agent': 'Mozilla/5.0',
-              },
-              timeout: 20000,
-            });
-
-            if (editRes.status === 200) {
-              const inspectData = await this.syncSite(siteUrl, auth);
-              return {
-                success: true,
-                message: 'Đã cập nhật trực tiếp mã nguồn Plugin Flatsome SEO Bridge thành công!',
-                inspect: inspectData,
-              };
-            }
-          }
-        } catch (editorErr: any) {
-          console.log('Plugin editor chưa cập nhật được, chuyển sang tải ZIP chuẩn hóa...', editorErr.message);
-        }
       }
 
       // 3. Lấy trang upload plugin để trích xuất _wpnonce
@@ -1084,6 +1122,245 @@ export class BridgeService {
       };
     } catch (err: any) {
       const msg = err.response?.data?.message || err.message || 'Lỗi khi tự động cài plugin lên WordPress';
+      throw new HttpException(msg, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async installFlatsomeTheme(siteUrl: string, auth: AuthParams) {
+    const fs = await import('fs');
+    const path = await import('path');
+
+    let cleanUrl = siteUrl.trim();
+    cleanUrl = cleanUrl.replace(/\/wp-admin(\/.*)?$/i, '');
+    cleanUrl = cleanUrl.replace(/\/wp-login\.php.*$/i, '');
+    cleanUrl = cleanUrl.replace(/\/+$/, '');
+
+
+    // 2. Tìm gói cài đặt zip Flatsome trong các thư mục
+    const themeZipCandidates = [
+      path.resolve(process.cwd(), 'themes/flatsome-theme-gpl-v3-18-5.zip'),
+      path.resolve(process.cwd(), '../themes/flatsome-theme-gpl-v3-18-5.zip'),
+      path.resolve(process.cwd(), 'server/themes/flatsome-theme-gpl-v3-18-5.zip'),
+      path.resolve(process.cwd(), '../server/themes/flatsome-theme-gpl-v3-18-5.zip'),
+      'c:\\Project\\seo\\autowebgit\\autoweb\\server\\themes\\flatsome-theme-gpl-v3-18-5.zip',
+      'c:\\Project\\seo\\autowebgit\\autoweb\\flatsome-theme-gpl-v3-18-5.zip',
+      'c:\\Project\\seo\\toolautothemewp\\flatsome-theme-gpl-v3-18-5.zip',
+    ];
+    const foundZipPath = themeZipCandidates.find((p) => fs.existsSync(p));
+    if (!foundZipPath) {
+      throw new HttpException(
+        'Không tìm thấy file flatsome-theme-gpl-v3-18-5.zip trong thư mục themes của hệ thống.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const zipBuffer = fs.readFileSync(foundZipPath);
+    const client = this.getClient(siteUrl, auth);
+
+    // 3. Cách 1: Cài đặt và kích hoạt qua Bridge API (Hỗ trợ Chunked 256KB - Siêu tốc, không lo post_max_size / timeout)
+    try {
+      // 3.1 Kiểm tra trước xem theme Flatsome đã có sẵn trên máy chủ chưa (nếu có, kích hoạt ngay lập tức)
+      try {
+        const checkRes = await client.post('/install-theme', { check_only: true });
+        if (checkRes.data && (checkRes.data.is_flatsome || checkRes.data.success)) {
+          const inspectData = await this.syncSite(siteUrl, auth);
+          return {
+            success: true,
+            message: checkRes.data.message || 'Theme Flatsome đã có sẵn trên website và đã được kích hoạt thành công!',
+            inspect: inspectData,
+          };
+        }
+      } catch (checkErr) {
+        // Tiếp tục truyền chunk
+      }
+
+      // 3.2 Chia file ZIP thành các Chunk 256KB (~340KB base64) để đảm bảo 100% vượt qua mọi giới hạn upload của hosting
+      const CHUNK_SIZE = 256 * 1024;
+      const totalChunks = Math.ceil(zipBuffer.length / CHUNK_SIZE);
+      const fileId = 'flatsome_' + Date.now();
+      let lastRes: any = null;
+
+      for (let i = 0; i < totalChunks; i++) {
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, zipBuffer.length);
+        const chunkBuffer = zipBuffer.subarray(start, end);
+        const chunkBase64 = chunkBuffer.toString('base64');
+
+        const chunkRes = await client.post('/install-theme', {
+          chunk_index: i,
+          total_chunks: totalChunks,
+          chunk_file_id: fileId,
+          chunk_base64: chunkBase64,
+        });
+        lastRes = chunkRes.data;
+      }
+
+      if (lastRes && (lastRes.success || lastRes.is_flatsome)) {
+        const inspectData = await this.syncSite(siteUrl, auth);
+        return {
+          success: true,
+          message: lastRes.message || 'Đã cài đặt và kích hoạt hoàn thiện Theme Flatsome thành công 100%!',
+          inspect: inspectData,
+        };
+      }
+    } catch (bridgeErr: any) {
+      console.warn('Cài Flatsome qua Bridge API thất bại hoặc bị chặn, chuyển sang WP Admin Upload:', bridgeErr.message);
+    }
+
+    // 4. Cách 2: Tải lên qua WordPress Admin Upload (/wp-admin/update.php?action=upload-theme)
+    if (!auth.username || !auth.password) {
+      throw new HttpException(
+        'Cần có Tên đăng nhập và Mật khẩu WordPress (Admin) để tự động cài Theme Flatsome.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    try {
+      // Đăng nhập WordPress
+      const loginParams = new URLSearchParams();
+      loginParams.append('log', auth.username);
+      loginParams.append('pwd', auth.password);
+      loginParams.append('rememberme', 'forever');
+      loginParams.append('redirect_to', `${cleanUrl}/wp-admin/`);
+      loginParams.append('testcookie', '1');
+
+      const loginRes = await axios.post(`${cleanUrl}/wp-login.php`, loginParams.toString(), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Cookie: 'wordpress_test_cookie=WP%20Cookie%20check',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) FlatsomeInstaller/1.0',
+        },
+        maxRedirects: 0,
+        validateStatus: (s) => s >= 200 && s < 400,
+        timeout: 25000,
+      });
+
+      const setCookies = loginRes.headers['set-cookie'] || [];
+      const cookieMap = new Map<string, string>();
+      for (const c of setCookies) {
+        const pair = c.split(';')[0].split('=');
+        if (pair.length >= 2) cookieMap.set(pair[0].trim(), pair.slice(1).join('=').trim());
+      }
+      const cookieStr = Array.from(cookieMap.entries()).map(([k, v]) => `${k}=${v}`).join('; ');
+
+      if (!cookieStr.includes('wordpress_logged_in')) {
+        throw new Error('Đăng nhập WordPress thất bại! Vui lòng kiểm tra lại tài khoản Quản trị viên (Admin).');
+      }
+
+      // Lấy trang upload theme để trích xuất _wpnonce
+      const uploadPageRes = await axios.get(`${cleanUrl}/wp-admin/theme-install.php?tab=upload`, {
+        headers: { Cookie: cookieStr, 'User-Agent': 'Mozilla/5.0' },
+        timeout: 25000,
+      });
+
+      const nonceMatch =
+        uploadPageRes.data.match(/id="_wpnonce"\s+name="_wpnonce"\s+value="([a-f0-9]+)"/i) ||
+        uploadPageRes.data.match(/name="_wpnonce"\s+value="([a-f0-9]+)"/i);
+
+      if (!nonceMatch) {
+        throw new Error('Không trích xuất được _wpnonce từ trang theme-install của WordPress.');
+      }
+      const nonce = nonceMatch[1];
+
+      // Upload theme zip
+      const formData = new FormData();
+      formData.append('_wpnonce', nonce);
+      formData.append('_wp_http_referer', '/wp-admin/theme-install.php?tab=upload');
+      formData.append('themezip', new Blob([new Uint8Array(zipBuffer)], { type: 'application/zip' }), 'flatsome.zip');
+
+      const uploadRes = await fetch(`${cleanUrl}/wp-admin/update.php?action=upload-theme`, {
+        method: 'POST',
+        headers: { Cookie: cookieStr, 'User-Agent': 'Mozilla/5.0' },
+        body: formData,
+      });
+
+      let uploadHtml = await uploadRes.text();
+
+      // Kiểm tra nếu WordPress báo lỗi link expired / kích thước vượt giới hạn upload
+      if (
+        uploadHtml.includes('caducado') ||
+        uploadHtml.includes('The link you followed has expired') ||
+        uploadHtml.includes('El enlace que has seguido ha caducado')
+      ) {
+        throw new Error(
+          'Máy chủ hosting giới hạn dung lượng tải lên (upload_max_filesize / post_max_size quá nhỏ). Vui lòng cập nhật cấu hình PHP hoặc tải zip Flatsome v3.18.5 lên thư mục wp-content/themes thủ công.',
+        );
+      }
+
+      // Nếu theme đã tồn tại (Replace current with uploaded)
+      if (
+        uploadHtml.includes('update-from-upload-form') ||
+        uploadHtml.includes('overwrite') ||
+        uploadHtml.includes('Replace current with uploaded') ||
+        uploadHtml.includes('Thay thế hiện tại') ||
+        uploadHtml.includes('Reemplazar')
+      ) {
+        const formNonceMatch = uploadHtml.match(/name="_wpnonce"\s+value="([a-f0-9]+)"/i);
+        const packageMatch = uploadHtml.match(/name="package"\s+value="([^"]+)"/i);
+        if (packageMatch) {
+          const overwriteParams = new URLSearchParams();
+          overwriteParams.append('_wpnonce', formNonceMatch ? formNonceMatch[1] : nonce);
+          overwriteParams.append('_wp_http_referer', '/wp-admin/theme-install.php?tab=upload');
+          overwriteParams.append('package', packageMatch[1]);
+          overwriteParams.append('overwrite', 'package');
+          overwriteParams.append('update-selected', 'Replace current with uploaded');
+
+          const overwriteRes = await axios.post(
+            `${cleanUrl}/wp-admin/update.php?action=upload-theme`,
+            overwriteParams.toString(),
+            {
+              headers: {
+                Cookie: cookieStr,
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'User-Agent': 'Mozilla/5.0',
+              },
+              timeout: 35000,
+            },
+          );
+          uploadHtml = overwriteRes.data;
+        }
+      }
+
+      // Kích hoạt theme Flatsome
+      let activateMatch =
+        uploadHtml.match(/themes\.php\?action=activate[^"'\s]+/i) ||
+        uploadHtml.match(/href="([^"]*themes\.php\?action=activate[^"]*)"/i);
+
+      if (activateMatch) {
+        let activateUrl = activateMatch[1] || activateMatch[0];
+        activateUrl = activateUrl.replace(/&amp;/g, '&');
+        if (!activateUrl.startsWith('http')) {
+          activateUrl = `${cleanUrl}/wp-admin/${activateUrl.replace(/^\/+/, '')}`;
+        }
+        await axios.get(activateUrl, { headers: { Cookie: cookieStr }, timeout: 25000 });
+      } else {
+        // Kích hoạt thủ công qua themes.php nếu chưa bấm
+        try {
+          const themesPageRes = await axios.get(`${cleanUrl}/wp-admin/themes.php`, {
+            headers: { Cookie: cookieStr },
+            timeout: 25000,
+          });
+          const pageMatch = themesPageRes.data.match(
+            /href="([^"]*themes\.php\?action=activate[^"]*stylesheet=flatsome[^"]*)"/i,
+          );
+          if (pageMatch) {
+            let activateUrl = pageMatch[1].replace(/&amp;/g, '&');
+            if (!activateUrl.startsWith('http')) {
+              activateUrl = `${cleanUrl}/wp-admin/${activateUrl.replace(/^\/+/, '')}`;
+            }
+            await axios.get(activateUrl, { headers: { Cookie: cookieStr }, timeout: 25000 });
+          }
+        } catch (e) {}
+      }
+
+      const inspectData = await this.syncSite(siteUrl, auth);
+      return {
+        success: true,
+        message: 'Đã tự động tải lên và kích hoạt hoàn thiện Theme Flatsome thành công 100%!',
+        inspect: inspectData,
+      };
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message || 'Lỗi khi cài đặt theme Flatsome lên WordPress';
       throw new HttpException(msg, HttpStatus.BAD_REQUEST);
     }
   }

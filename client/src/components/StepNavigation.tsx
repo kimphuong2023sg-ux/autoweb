@@ -9,6 +9,7 @@ import {
   Layers,
   ChevronRight,
   Menu,
+  BookOpen,
 } from 'lucide-react';
 import { WpInspectData } from '../types';
 
@@ -44,18 +45,30 @@ export const StepNavigation: React.FC<StepNavigationProps> = ({
     },
     {
       id: 4,
+      title: 'Cài Đặt Nền Website',
+      subtitle: 'Màu nền, Gradient & Ảnh nền',
+      icon: Layers,
+    },
+    {
+      id: 5,
       title: 'Cấu Hình Menu',
       subtitle: 'Menu Chính Header & Submenu',
       icon: Menu,
     },
     {
-      id: 5,
+      id: 6,
       title: 'Dựng Trang Chủ',
       subtitle: 'Kéo thả Sections UX Builder',
       icon: LayoutTemplate,
     },
     {
-      id: 6,
+      id: 7,
+      title: 'Trang Con & Bài Viết',
+      subtitle: 'Màu chữ & Khung làm nổi bật',
+      icon: BookOpen,
+    },
+    {
+      id: 8,
       title: 'Mẫu Footer',
       subtitle: 'Tạo Footer UX Block chuẩn',
       icon: Columns,
@@ -122,6 +135,16 @@ export const StepNavigation: React.FC<StepNavigationProps> = ({
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
                         Đang chọn
                       </span>
+                    ) : s.id === 1 && inspectData ? (
+                      inspectData.site?.is_flatsome ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full shrink-0">
+                          Flatsome ✓
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full shrink-0">
+                          Cần Flatsome ⚠️
+                        </span>
+                      )
                     ) : (
                       <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 shrink-0 transition-transform group-hover:translate-x-0.5" />
                     )}
@@ -140,22 +163,31 @@ export const StepNavigation: React.FC<StepNavigationProps> = ({
         </nav>
       </div>
 
-      {/* Helper Box: Download Bridge Plugin */}
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 mt-2">
-        <div className="flex items-center gap-2 mb-1.5">
+      {/* Helper Box: Download Bridge Plugin & Theme */}
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 mt-2 space-y-2">
+        <div className="flex items-center gap-2 mb-1">
           <Download className="w-4 h-4 text-blue-600" />
-          <span className="text-xs font-bold text-slate-800">Plugin Kết Nối WordPress</span>
+          <span className="text-xs font-bold text-slate-800">Tài Nguyên Sẵn Có</span>
         </div>
-        <p className="text-[11px] text-slate-500 leading-relaxed mb-3">
-          Tải plugin <code className="bg-slate-200/70 px-1 py-0.5 rounded text-slate-700">flatsome-seo-bridge.zip</code> rồi upload lên WordPress để lấy Secret Token.
+        <p className="text-[11px] text-slate-500 leading-relaxed">
+          Theme Flatsome v3.18.5 và Plugin Bridge đã sẵn sàng để cài đặt tự động hoặc tải về thủ công.
         </p>
-        <a
-          href="/wp-bridge-plugin/flatsome-seo-bridge.zip"
-          download="flatsome-seo-bridge.zip"
-          className="w-full inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-semibold py-2 px-3 rounded-lg shadow-2xs transition"
-        >
-          <Download className="w-3.5 h-3.5" /> Tải Plugin Bridge (.zip)
-        </a>
+        <div className="flex flex-col gap-1.5 pt-1">
+          <a
+            href="/wp-bridge-plugin/flatsome-seo-bridge.zip"
+            download="flatsome-seo-bridge.zip"
+            className="w-full inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-semibold py-1.5 px-2.5 rounded-lg shadow-2xs transition"
+          >
+            <Download className="w-3.5 h-3.5 text-blue-600" /> Tải Plugin Bridge (.zip)
+          </a>
+          <a
+            href="/themes/flatsome-theme-gpl-v3-18-5.zip"
+            download="flatsome-theme-gpl-v3-18-5.zip"
+            className="w-full inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-semibold py-1.5 px-2.5 rounded-lg shadow-2xs transition"
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-600" /> Tải Flatsome v3.18.5 (.zip)
+          </a>
+        </div>
       </div>
     </div>
   );

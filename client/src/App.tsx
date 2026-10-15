@@ -10,14 +10,334 @@ import { Step3HomepageBuilder } from './components/steps/Step3HomepageBuilder';
 import { Step4FooterPicker } from './components/steps/Step4FooterPicker';
 import { Step5BulkContentCreator } from './components/steps/Step5BulkContentCreator';
 import { StepMenuManager } from './components/steps/StepMenuManager';
-import { ConnectedSite, WpInspectData, ThemeConfig, FooterConfig, SectionItem, SeoEssentialsConfig, MenuItem, MenuStylingConfig } from './types';
+import { StepSiteBackground } from './components/steps/StepSiteBackground';
+import { StepSubpageStyling } from './components/steps/StepSubpageStyling';
+import { ConnectedSite, WpInspectData, ThemeConfig, FooterConfig, SectionItem, SeoEssentialsConfig, MenuItem, MenuStylingConfig, SubpageStylingConfig, getInitialSubpageStyling } from './types';
 import { api } from './services/api';
-import { Globe, Plus, AlertTriangle, CheckCircle2, XCircle, Download, RefreshCw, X, UploadCloud, Zap, Loader2, Sparkles } from 'lucide-react';
+import { Globe, Plus, AlertTriangle, CheckCircle2, XCircle, Download, RefreshCw, X, UploadCloud, Zap, Loader2, Sparkles, RotateCcw } from 'lucide-react';
+import { LoginPage } from './components/auth/LoginPage';
+import { AdminPage } from './components/admin/AdminPage';
+import { KickoutModal } from './components/auth/KickoutModal';
+import { getToken, getUser, clearAuth, authFetch, AuthUser } from './utils/auth';
 
 const STORAGE_KEY_SITES = 'flatsome_seo_saved_sites';
 const STORAGE_KEY_ACTIVE = 'flatsome_seo_active_site';
 
+// Clean Default Builders (Isolated per site)
+export const getInitialThemeConfig = (siteName?: string, primaryColor = '#0f3a61', secondaryColor = '#d4af37'): ThemeConfig => ({
+  nicheId: 'real-estate',
+  colorPrimary: primaryColor,
+  colorSecondary: secondaryColor,
+  topbarText: '',
+  headerLayout: 'wide-nav',
+  copyrightText: `© ${new Date().getFullYear()} Bản quyền thuộc về ${siteName || 'Doanh Nghiệp'}. Thiết kế chuẩn SEO.`,
+  siteWidth: '1200px',
+  fontHeading: 'Inter',
+  fontBody: 'Plus Jakarta Sans',
+  defaultPageTemplate: 'full-width',
+  siteLayout: 'full-width',
+
+  // Header Options
+  headerPreset: 'header-wide-nav-dark',
+  headerHeight: 90,
+  headerBg: '#161616',
+  headerColor: 'dark',
+  headerWidth: 'container',
+
+  headerBottomShow: true,
+  headerBottomHeight: 45,
+  headerBottomBg: primaryColor,
+  headerBottomColor: 'dark',
+  headerBottomWidth: 'full-width',
+  headerNavNoWrap: true,
+
+  headerSticky: true,
+  headerStickyBottom: true,
+  headerStickyHeight: 70,
+  headerStickyStyle: 'jump',
+  headerStickyHideOnScroll: false,
+
+  headerButton1Show: true,
+  headerButton1Text: 'REGÍSTRATE',
+  headerButton1Link: '#register',
+  headerButton1Target: '_self',
+  headerButton1Color: 'alert',
+  headerButton1Style: 'is-flat',
+  headerButton1Radius: '99px',
+
+  headerButton2Show: true,
+  headerButton2Text: 'ENTRAR',
+  headerButton2Link: '#login',
+  headerButton2Target: '_self',
+  headerButton2Color: 'alert',
+  headerButton2Style: 'is-flat',
+  headerButton2Radius: '99px',
+
+  headerShowSearch: 'icon',
+  headerShowCart: false,
+  headerShowAccount: false,
+  headerShowContact: false,
+  headerContactText: '',
+
+  // Site-wide Background Options
+  siteBgType: 'color',
+  siteBgColor: '#ffffff',
+  siteBgGradientColor1: '#0f172a',
+  siteBgGradientColor2: '#1e293b',
+  siteBgGradientAngle: 135,
+  siteBgGradientType: 'linear',
+  siteBgImage: '',
+  siteBgImageId: 0,
+  siteBgImageRepeat: 'no-repeat',
+  siteBgImageSize: 'cover',
+  siteBgImagePosition: 'center center',
+  siteBgImageAttachment: 'fixed',
+  siteBgOverlayColor: 'rgba(0, 0, 0, 0.45)',
+  siteBgOverlayEnable: false,
+});
+
+export const getInitialFooterConfig = (brand = 'Website Chuẩn SEO'): FooterConfig => ({
+  layout: 'corporate-4col',
+  brandName: brand,
+  logoType: 'text',
+  logoUrl: '',
+  logoWidth: 180,
+  bio: 'Đơn vị uy tín chuyên cung cấp các giải pháp chất lượng cao, phục vụ khách hàng trên toàn quốc với sự tận tâm và cam kết bảo hành dài hạn.',
+  hotline: '0988.xxx.xxx',
+  email: 'lienhe@domain.com',
+  address: 'Hà Nội, Việt Nam',
+  bgColor: '#0b0f19',
+  col2Title: 'Về Chúng Tôi',
+  col2Links: [
+    { text: 'Giới thiệu công ty', url: '/gioi-thieu/' },
+    { text: 'Chính sách bảo mật', url: '/chinh-sach-bao-mat/' },
+    { text: 'Điều khoản sử dụng', url: '/dieu-khoan-su-dung/' },
+    { text: 'Liên hệ hợp tác', url: '/lien-he/' },
+  ],
+  col3Title: 'Dịch Vụ Chính',
+  col3Links: [
+    { text: 'Tư vấn chiến lược', url: '#' },
+    { text: 'Giải pháp trọn gói', url: '#' },
+    { text: 'Tối ưu hóa chuyển đổi', url: '#' },
+    { text: 'Hỗ trợ kỹ thuật 24/7', url: '#' },
+  ],
+  col4Title: 'Liên Hệ Nhanh',
+});
+
+export const getInitialEssentials = (brand = 'Website Chuẩn SEO'): SeoEssentialsConfig => ({
+  brandName: brand,
+  hotline: '0988.xxx.xxx',
+  email: 'lienhe@domain.com',
+  address: 'Hà Nội, Việt Nam',
+  createPages: true,
+  createMenu: true,
+  setPermalinks: true,
+});
+
+export const getInitialSections = (): SectionItem[] => [
+  {
+    id: 'hero-1',
+    type: 'hero',
+    title: 'Giải Pháp Đột Phá Cho Doanh Nghiệp Bạn',
+    subtitle: 'Tối ưu hóa hiệu suất, nâng tầm thương hiệu với quy trình chuyên nghiệp và chuẩn SEO hàng đầu.',
+    buttonText: 'Nhận Tư Vấn Ngay',
+    buttonLink: '#contact',
+    bgColor: '#f8fafc',
+  },
+  {
+    id: 'services-1',
+    type: 'services',
+    title: 'Dịch Vụ Nổi Bật',
+    subtitle: 'Các giải pháp toàn diện giúp doanh nghiệp bứt phá doanh số',
+  },
+  {
+    id: 'about-1',
+    type: 'about',
+    title: 'Hơn 10 Năm Khẳng Định Uy Tín',
+    subtitle: 'Đồng hành cùng sự phát triển bền vững của khách hàng',
+  },
+  {
+    id: 'numbers-1',
+    type: 'numbers',
+    title: 'Những Con Số Ấn Tượng',
+  },
+  {
+    id: 'faq-1',
+    type: 'faq',
+    title: 'Câu Hỏi Thường Gặp (FAQ)',
+  },
+  {
+    id: 'cta-1',
+    type: 'cta',
+    title: 'Sẵn Sàng Nâng Tầm Dự Án Của Bạn?',
+    subtitle: 'Liên hệ ngay hôm nay để nhận ưu đãi và tư vấn miễn phí từ chuyên gia!',
+    buttonText: 'Gọi Hotline Ngay',
+    buttonLink: 'tel:0988000000',
+  },
+];
+
+export const getInitialMenuStyling = (primaryColor = '#1e3c72'): MenuStylingConfig => ({
+  bgType: 'gradient',
+  bgColor: '#1e293b',
+  gradientColor1: primaryColor,
+  gradientColor2: '#2a5298',
+  gradientAngle: '135deg',
+  textColor: '#ffffff',
+  textHoverColor: '#fde047',
+  itemHoverBg: 'rgba(255,255,255,0.12)',
+  fontSize: '13px',
+  fontWeight: '600',
+  isUppercase: true,
+  itemRadius: '6px',
+  dropdownBg: '#1e293b',
+  dropdownTextColor: '#f8fafc',
+  dropdownHoverBg: 'rgba(255,255,255,0.08)',
+  customCss: '',
+  mobileDrawerTheme: 'dark',
+  mobileBgColor: '#0f172a',
+  mobileTextColor: '#f8fafc',
+  mobileTextHoverColor: '#38bdf8',
+  mobileHoverBg: 'rgba(255, 255, 255, 0.08)',
+  mobileDividerColor: 'rgba(255, 255, 255, 0.08)',
+  mobileSubmenuBg: '#1e293b',
+  mobileSubmenuTextColor: '#94a3b8',
+  mobileFontSize: '14px',
+  mobileShowSearch: false,
+  mobileShowSocial: false,
+  mobileHideWooNotice: true,
+  mobileShowNewsletter: false,
+  cleanMobileNavOnly: false,
+  mobileIconColor: '#ffffff',
+  mobileIconHoverColor: '#38bdf8',
+  mobileIconBgColor: 'transparent',
+});
+
 export const App: React.FC = () => {
+  // Routing helper (/admin vs /)
+  const getInitialRoute = () => {
+    const path = window.location.pathname.toLowerCase();
+    const hash = window.location.hash.toLowerCase();
+    if (path === '/admin' || path.startsWith('/admin/') || hash === '#/admin' || hash.startsWith('#/admin/')) {
+      return '/admin';
+    }
+    return '/';
+  };
+
+  const [currentRoute, setCurrentRoute] = useState(getInitialRoute);
+
+  const [toolUser, setToolUser] = useState<AuthUser | null>(() => getUser('user'));
+  const [isToolLoggedIn, setIsToolLoggedIn] = useState<boolean>(() => {
+    return !!getToken('user') || (!!getToken('admin') && !!getUser('admin'));
+  });
+
+  const [adminUser, setAdminUser] = useState<AuthUser | null>(() => getUser('admin'));
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
+    const token = getToken('admin');
+    const user = getUser('admin');
+    return !!token && user?.role === 'admin';
+  });
+
+  const [kickoutMessage, setKickoutMessage] = useState<string | null>(null);
+
+  // Lắng nghe thay đổi URL (Back/Forward hoặc hash)
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      if (path === '/admin' || path.startsWith('/admin/') || hash === '#/admin' || hash.startsWith('#/admin/')) {
+        setCurrentRoute('/admin');
+      } else {
+        setCurrentRoute('/');
+      }
+    };
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+    };
+  }, []);
+
+  const navigate = (path: string) => {
+    if (path === '/admin') {
+      window.location.hash = '#/admin';
+    } else {
+      window.location.hash = '';
+    }
+    try {
+      window.history.pushState({}, '', path);
+    } catch (e) {}
+    setCurrentRoute(path);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Lắng nghe sự kiện bị đá phiên hoặc hết hạn
+  useEffect(() => {
+    const handleSessionKicked = (e: any) => {
+      const scope = e.detail?.scope || (currentRoute === '/admin' ? 'admin' : 'user');
+      if (scope === 'admin') {
+        clearAuth('admin');
+        setIsAdminLoggedIn(false);
+        setAdminUser(null);
+      } else {
+        clearAuth('user');
+        setIsToolLoggedIn(false);
+        setToolUser(null);
+      }
+      setKickoutMessage(e.detail?.message || 'Tài khoản của bạn đã được đăng nhập từ một thiết bị khác!');
+    };
+
+    const handleAuthExpired = (e: any) => {
+      const scope = e.detail?.scope || (currentRoute === '/admin' ? 'admin' : 'user');
+      if (scope === 'admin') {
+        clearAuth('admin');
+        setIsAdminLoggedIn(false);
+        setAdminUser(null);
+      } else {
+        clearAuth('user');
+        setIsToolLoggedIn(false);
+        setToolUser(null);
+      }
+    };
+
+    window.addEventListener('session_kicked', handleSessionKicked);
+    window.addEventListener('auth_expired', handleAuthExpired);
+    return () => {
+      window.removeEventListener('session_kicked', handleSessionKicked);
+      window.removeEventListener('auth_expired', handleAuthExpired);
+    };
+  }, [currentRoute]);
+
+  const handleToolLoginSuccess = (data: { user: AuthUser; token: string }) => {
+    setToolUser(data.user);
+    setIsToolLoggedIn(true);
+    if (data.user.role === 'admin') {
+      setAdminUser(data.user);
+      setIsAdminLoggedIn(true);
+    }
+  };
+
+  const handleAdminLoginSuccess = (data: { user: AuthUser; token: string }) => {
+    setAdminUser(data.user);
+    setIsAdminLoggedIn(true);
+    setToolUser(data.user);
+    setIsToolLoggedIn(true);
+    navigate('/admin');
+  };
+
+  const handleToolLogout = () => {
+    clearAuth('user');
+    setIsToolLoggedIn(false);
+    setToolUser(null);
+  };
+
+  const handleAdminLogout = () => {
+    clearAuth('admin');
+    setIsAdminLoggedIn(false);
+    setAdminUser(null);
+    navigate('/admin');
+  };
+
   // Sites State
   const [savedSites, setSavedSites] = useState<ConnectedSite[]>([]);
   const [currentSite, setCurrentSite] = useState<ConnectedSite | null>(null);
@@ -37,162 +357,19 @@ export const App: React.FC = () => {
 
   // Active Step (1 - 5)
   const [currentStep, setCurrentStep] = useState(1);
+  const [showLivePreview, setShowLivePreview] = useState(false);
 
-  // Configuration States
-  const [themeConfig, setThemeConfig] = useState<ThemeConfig>({
-    nicheId: 'real-estate',
-    colorPrimary: '#0f3a61',
-    colorSecondary: '#d4af37',
-    topbarText: 'Hotline: 0988.xxx.xxx - Tư vấn giải pháp SEO & Website 24/7',
-    headerLayout: 'wide-nav',
-    copyrightText: '© 2026 Bản quyền thuộc về Doanh Nghiệp. Thiết kế chuẩn SEO.',
-    siteWidth: '1200px',
-    fontHeading: 'Inter',
-    fontBody: 'Plus Jakarta Sans',
-    defaultPageTemplate: 'default',
-    siteLayout: 'full-width',
-
-    // Header Options
-    headerPreset: 'header-wide-nav-dark',
-    headerHeight: 90,
-    headerBg: '#ffffff',
-    headerColor: 'light',
-    headerWidth: 'container',
-
-    headerBottomShow: true,
-    headerBottomHeight: 45,
-    headerBottomBg: '#0f3a61',
-    headerBottomColor: 'dark',
-    headerBottomWidth: 'full-width',
-    headerNavNoWrap: true,
-
-    headerSticky: true,
-    headerStickyBottom: true,
-    headerStickyHeight: 70,
-    headerStickyStyle: 'jump',
-    headerStickyHideOnScroll: false,
-
-    headerButton1Show: true,
-    headerButton1Text: 'REGÍSTRATE',
-    headerButton1Link: '#register',
-    headerButton1Target: '_self',
-    headerButton1Color: 'alert',
-    headerButton1Style: 'is-flat',
-    headerButton1Radius: '99px',
-
-    headerButton2Show: true,
-    headerButton2Text: 'ENTRAR',
-    headerButton2Link: '#login',
-    headerButton2Target: '_self',
-    headerButton2Color: 'alert',
-    headerButton2Style: 'is-flat',
-    headerButton2Radius: '99px',
-
-    headerShowSearch: 'icon',
-    headerShowCart: false,
-    headerShowAccount: false,
-    headerShowContact: false,
-    headerContactText: '',
-  });
-
-  const [footerConfig, setFooterConfig] = useState<FooterConfig>({
-    layout: 'corporate-4col',
-    brandName: 'Doanh Nghiệp Uy Tín',
-    bio: 'Đơn vị uy tín chuyên cung cấp các giải pháp chất lượng cao, phục vụ khách hàng trên toàn quốc với sự tận tâm và cam kết bảo hành dài hạn.',
-    hotline: '0988.xxx.xxx',
-    email: 'lienhe@domain.com',
-    address: 'Hà Nội, Việt Nam',
-    bgColor: '#1e293b',
-  });
-
-  const [sections, setSections] = useState<SectionItem[]>([
-    {
-      id: 'hero-1',
-      type: 'hero',
-      title: 'Giải Pháp Đột Phá Cho Doanh Nghiệp Bạn',
-      subtitle: 'Tối ưu hóa hiệu suất, nâng tầm thương hiệu với quy trình chuyên nghiệp và chuẩn SEO hàng đầu.',
-      buttonText: 'Nhận Tư Vấn Ngay',
-      buttonLink: '#contact',
-      bgColor: '#f8fafc',
-    },
-    {
-      id: 'services-1',
-      type: 'services',
-      title: 'Dịch Vụ Nổi Bật',
-      subtitle: 'Các giải pháp toàn diện giúp doanh nghiệp bứt phá doanh số',
-    },
-    {
-      id: 'about-1',
-      type: 'about',
-      title: 'Hơn 10 Năm Khẳng Định Uy Tín',
-      subtitle: 'Đồng hành cùng sự phát triển bền vững của khách hàng',
-    },
-    {
-      id: 'numbers-1',
-      type: 'numbers',
-      title: 'Những Con Số Ấn Tượng',
-    },
-    {
-      id: 'faq-1',
-      type: 'faq',
-      title: 'Câu Hỏi Thường Gặp (FAQ)',
-    },
-    {
-      id: 'cta-1',
-      type: 'cta',
-      title: 'Sẵn Sàng Nâng Tầm Dự Án Của Bạn?',
-      subtitle: 'Liên hệ ngay hôm nay để nhận ưu đãi và tư vấn miễn phí từ chuyên gia!',
-      buttonText: 'Gọi Hotline Ngay',
-      buttonLink: 'tel:0988000000',
-    },
-  ]);
-
-  const [essentials, setEssentials] = useState<SeoEssentialsConfig>({
-    brandName: 'Doanh Nghiệp Uy Tín',
-    hotline: '0988.xxx.xxx',
-    email: 'lienhe@domain.com',
-    address: 'Hà Nội, Việt Nam',
-    createPages: true,
-    createMenu: true,
-    setPermalinks: true,
-  });
-
+  // Configuration States (Initialized with clean isolated defaults)
+  const [themeConfig, setThemeConfig] = useState<ThemeConfig>(getInitialThemeConfig());
+  const [footerConfig, setFooterConfig] = useState<FooterConfig>(getInitialFooterConfig());
+  const [sections, setSections] = useState<SectionItem[]>(getInitialSections());
+  const [essentials, setEssentials] = useState<SeoEssentialsConfig>(getInitialEssentials());
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [menuStyling, setMenuStyling] = useState<MenuStylingConfig>({
-    bgType: 'gradient',
-    bgColor: '#1e293b',
-    gradientColor1: '#1e3c72',
-    gradientColor2: '#2a5298',
-    gradientAngle: '135deg',
-    textColor: '#ffffff',
-    textHoverColor: '#fde047',
-    itemHoverBg: 'rgba(255,255,255,0.12)',
-    fontSize: '13px',
-    fontWeight: '600',
-    isUppercase: true,
-    itemRadius: '6px',
-    dropdownBg: '#1e293b',
-    dropdownTextColor: '#f8fafc',
-    dropdownHoverBg: 'rgba(255,255,255,0.08)',
-    customCss: '',
-    mobileDrawerTheme: 'dark',
-    mobileBgColor: '#0f172a',
-    mobileTextColor: '#f8fafc',
-    mobileTextHoverColor: '#38bdf8',
-    mobileHoverBg: 'rgba(255, 255, 255, 0.08)',
-    mobileDividerColor: 'rgba(255, 255, 255, 0.08)',
-    mobileSubmenuBg: '#1e293b',
-    mobileSubmenuTextColor: '#94a3b8',
-    mobileFontSize: '14px',
-    mobileShowSearch: false,
-    mobileShowSocial: false,
-    mobileHideWooNotice: true,
-    mobileShowNewsletter: false,
-    cleanMobileNavOnly: false,
-    mobileIconColor: '#ffffff',
-    mobileIconHoverColor: '#38bdf8',
-    mobileIconBgColor: 'transparent',
-  });
+  const [menuStyling, setMenuStyling] = useState<MenuStylingConfig>(getInitialMenuStyling());
+  const [subpageStyling, setSubpageStyling] = useState<SubpageStylingConfig>(getInitialSubpageStyling());
+
+  // Ref to prevent race conditions where auto-save overwrites a newly selected site with the previous site's state
+  const isSwitchingSiteRef = React.useRef(false);
 
   // Auto clear toast
   useEffect(() => {
@@ -203,7 +380,20 @@ export const App: React.FC = () => {
   }, [toast]);
 
   const getSiteStorageKey = (siteUrl: string) => {
-    return `flatsome_site_state_${siteUrl.trim().toLowerCase().replace(/\/+$/, '')}`;
+    const cleanKey = siteUrl.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, '');
+    return `flatsome_site_state_${cleanKey}`;
+  };
+
+  const resetSiteStateToDefault = (siteUrl: string) => {
+    const domain = siteUrl.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    setSections(getInitialSections());
+    setThemeConfig(getInitialThemeConfig(domain));
+    setFooterConfig(getInitialFooterConfig(domain));
+    setEssentials(getInitialEssentials(domain));
+    setMenuItems([]);
+    setMenuStyling(getInitialMenuStyling());
+    setSubpageStyling(getInitialSubpageStyling());
+    setCurrentStep(1);
   };
 
   const loadLocalSiteState = (siteUrl: string) => {
@@ -211,17 +401,15 @@ export const App: React.FC = () => {
       const saved = localStorage.getItem(getSiteStorageKey(siteUrl));
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.sections && Array.isArray(parsed.sections) && parsed.sections.length > 0) {
-          setSections(parsed.sections);
-        }
-        if (parsed.themeConfig) setThemeConfig(parsed.themeConfig);
-        if (parsed.footerConfig) setFooterConfig(parsed.footerConfig);
-        if (parsed.essentials) setEssentials(parsed.essentials);
-        if (parsed.menuItems && Array.isArray(parsed.menuItems) && parsed.menuItems.length > 0) {
-          setMenuItems(parsed.menuItems);
-        }
-        if (parsed.menuStyling) setMenuStyling(parsed.menuStyling);
-        if (typeof parsed.currentStep === 'number') setCurrentStep(Math.min(6, Math.max(1, parsed.currentStep)));
+        const domain = siteUrl.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+        setSections(parsed.sections && Array.isArray(parsed.sections) && parsed.sections.length > 0 ? parsed.sections : getInitialSections());
+        setThemeConfig(parsed.themeConfig || getInitialThemeConfig(domain));
+        setFooterConfig(parsed.footerConfig || getInitialFooterConfig(domain));
+        setEssentials(parsed.essentials || getInitialEssentials(domain));
+        setMenuItems(parsed.menuItems && Array.isArray(parsed.menuItems) ? parsed.menuItems : []);
+        setMenuStyling(parsed.menuStyling || getInitialMenuStyling());
+        setSubpageStyling(parsed.subpageStyling || getInitialSubpageStyling());
+        setCurrentStep(typeof parsed.currentStep === 'number' ? Math.min(8, Math.max(1, parsed.currentStep)) : 1);
         return true;
       }
     } catch (e) {
@@ -230,9 +418,28 @@ export const App: React.FC = () => {
     return false;
   };
 
-  // Auto-save active site state to localStorage
+  // Reset current site's state to clean defaults (clears any accidental cross-contamination)
+  const handleResetCurrentSiteState = () => {
+    if (!currentSite) return;
+    const domain = currentSite.siteUrl.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    if (!window.confirm(`Bạn có chắc chắn muốn ĐẶT LẠI TOÀN BỘ CÀI ĐẶT (Header, Theme, Sections, Footer) của website "${domain}" về mặc định sạch không? Thao tác này sẽ xóa sạch dữ liệu cũ lưu tạm của website này trong tool.`)) {
+      return;
+    }
+    try {
+      localStorage.removeItem(getSiteStorageKey(currentSite.siteUrl));
+    } catch (e) {
+      console.error(e);
+    }
+    resetSiteStateToDefault(currentSite.siteUrl);
+    setToast({
+      type: 'success',
+      message: `Đã làm sạch và đặt lại cài đặt về mặc định cho ${domain}!`,
+    });
+  };
+
+  // Auto-save active site state to localStorage (guarded against site-switching race conditions)
   useEffect(() => {
-    if (!currentSite?.siteUrl) return;
+    if (!currentSite?.siteUrl || isSwitchingSiteRef.current) return;
     try {
       localStorage.setItem(
         getSiteStorageKey(currentSite.siteUrl),
@@ -244,6 +451,7 @@ export const App: React.FC = () => {
           essentials,
           menuItems,
           menuStyling,
+          subpageStyling,
           lastUpdated: Date.now(),
         })
       );
@@ -273,13 +481,20 @@ export const App: React.FC = () => {
   }, []);
 
   const handleSelectSite = async (site: ConnectedSite) => {
+    isSwitchingSiteRef.current = true;
     setCurrentSite(site);
     localStorage.setItem(STORAGE_KEY_ACTIVE, site.siteUrl);
-    // Instant restore from localStorage
+
+    // Instant restore from localStorage or reset to fresh defaults for this site
     const restored = loadLocalSiteState(site.siteUrl);
     if (!restored) {
-      setCurrentStep(1);
+      resetSiteStateToDefault(site.siteUrl);
     }
+
+    setTimeout(() => {
+      isSwitchingSiteRef.current = false;
+    }, 150);
+
     // Cloud sync from live WordPress
     await syncSiteData(site);
   };
@@ -297,19 +512,24 @@ export const App: React.FC = () => {
 
     setSavedSites(updated);
     localStorage.setItem(STORAGE_KEY_SITES, JSON.stringify(updated));
-    setCurrentSite(site);
-    localStorage.setItem(STORAGE_KEY_ACTIVE, site.siteUrl);
     setEditingSite(null);
     setToast({
       type: 'success',
       message: `Kết nối thành công tới ${site.siteUrl.replace(/^https?:\/\//, '')}!`,
     });
+
+    // CRITICAL: Activate and cleanly isolate state for this newly connected site
+    await handleSelectSite(site);
   };
 
   const handleDeleteSite = (siteUrl: string) => {
     const updated = savedSites.filter((s) => s.siteUrl !== siteUrl);
     setSavedSites(updated);
     localStorage.setItem(STORAGE_KEY_SITES, JSON.stringify(updated));
+    try {
+      localStorage.removeItem(getSiteStorageKey(siteUrl));
+    } catch (e) {}
+
     if (currentSite?.siteUrl === siteUrl) {
       if (updated.length > 0) {
         handleSelectSite(updated[0]);
@@ -318,6 +538,7 @@ export const App: React.FC = () => {
         setInspectData(null);
         setConnectionError(null);
         localStorage.removeItem(STORAGE_KEY_ACTIVE);
+        resetSiteStateToDefault('default');
       }
     }
     setToast({ type: 'success', message: 'Đã xóa website khỏi danh sách!' });
@@ -330,28 +551,77 @@ export const App: React.FC = () => {
       const data: WpInspectData = await api.syncSite(site);
       setInspectData(data);
 
-      // Pre-fill theme configs if WordPress already has them
-      if (data.site?.name) {
-        setFooterConfig((prev) => ({ ...prev, brandName: data.site.name }));
-        setEssentials((prev) => ({ ...prev, brandName: data.site.name }));
-      }
-      if (data.flatsome?.color_primary) {
+      const brand = data.site?.name || site.siteUrl.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+
+      // Pre-fill brand name if default
+      setFooterConfig((prev) => ({
+        ...prev,
+        brandName: prev.brandName === 'Website Chuẩn SEO' || prev.brandName === 'Doanh Nghiệp Uy Tín' ? brand : prev.brandName,
+      }));
+      setEssentials((prev) => ({
+        ...prev,
+        brandName: prev.brandName === 'Website Chuẩn SEO' || prev.brandName === 'Doanh Nghiệp Uy Tín' ? brand : prev.brandName,
+      }));
+
+      // Sync Flatsome theme colors & buttons from live WordPress
+      if (data.flatsome) {
         setThemeConfig((prev) => ({
           ...prev,
-          colorPrimary: data.flatsome.color_primary,
+          colorPrimary: data.flatsome.color_primary || prev.colorPrimary,
           colorSecondary: data.flatsome.color_secondary || prev.colorSecondary,
-          topbarText: data.flatsome.topbar_content || prev.topbarText,
+          topbarText:
+            data.flatsome.topbar_content && !data.flatsome.topbar_content.includes('0988.xxx.xxx')
+              ? data.flatsome.topbar_content
+              : prev.topbarText && !prev.topbarText.includes('0988.xxx.xxx')
+              ? prev.topbarText
+              : '',
           defaultPageTemplate: data.flatsome.default_page_template || prev.defaultPageTemplate || 'default',
           siteLayout: data.flatsome.layout || prev.siteLayout || 'full-width',
+          // Tự động nhận diện và đồng bộ text thực tế của Button 1 & Button 2 từ web WordPress
+          headerButton1Text:
+            data.flatsome.header_button_1 !== undefined && data.flatsome.header_button_1 !== ''
+              ? data.flatsome.header_button_1
+              : prev.headerButton1Text,
+          headerButton1Link: data.flatsome.header_button_1_link || prev.headerButton1Link,
+          headerButton1Color: (data.flatsome.header_button_1_color as any) || prev.headerButton1Color,
+          headerButton1Style: (data.flatsome.header_button_1_style as any) || prev.headerButton1Style,
+          headerButton1Radius: data.flatsome.header_button_1_radius || prev.headerButton1Radius,
+
+          headerButton2Text:
+            data.flatsome.header_button_2 !== undefined && data.flatsome.header_button_2 !== ''
+              ? data.flatsome.header_button_2
+              : prev.headerButton2Text,
+          headerButton2Link: data.flatsome.header_button_2_link || prev.headerButton2Link,
+          headerButton2Color: (data.flatsome.header_button_2_color as any) || prev.headerButton2Color,
+          headerButton2Style: (data.flatsome.header_button_2_style as any) || prev.headerButton2Style,
+          headerButton2Radius: data.flatsome.header_button_2_radius || prev.headerButton2Radius,
         }));
       }
 
-      // Restore sections from WordPress if available
-      if (data.homepage?.savedSections && data.homepage.savedSections.length > 0) {
+      // Check if this site already had custom sections in localStorage:
+      // If NOT, and WordPress has savedSections, adopt WordPress's sections
+      const savedRaw = localStorage.getItem(getSiteStorageKey(site.siteUrl));
+      let hasCustomLocalSections = false;
+      if (savedRaw) {
+        try {
+          const parsed = JSON.parse(savedRaw);
+          hasCustomLocalSections = Array.isArray(parsed?.sections) && parsed.sections.length > 0;
+        } catch (e) {}
+      }
+
+      if (data.subpage_styling) {
+        setSubpageStyling((prev) => ({
+          ...getInitialSubpageStyling(),
+          ...prev,
+          ...data.subpage_styling,
+        }));
+      }
+
+      if (!hasCustomLocalSections && data.homepage?.savedSections && data.homepage.savedSections.length > 0) {
         setSections(data.homepage.savedSections);
         setToast({
           type: 'success',
-          message: `🎯 Đã quét WordPress! Khôi phục ${data.homepage.savedSections.length} khối Sections Trang Chủ từ website.`,
+          message: `🎯 Đã quét WordPress! Khôi phục ${data.homepage.savedSections.length} khối Sections Trang Chủ từ website ${brand}.`,
         });
       } else {
         setToast({
@@ -447,8 +717,36 @@ export const App: React.FC = () => {
     }
   };
 
+  // 1. Phân luồng Cổng Quản Trị (/admin hoặc #/admin)
+  if (currentRoute === '/admin') {
+    if (isAdminLoggedIn) {
+      return (
+        <>
+          <AdminPage currentUser={adminUser} onNavigate={navigate} onLogout={handleAdminLogout} />
+          <KickoutModal message={kickoutMessage} onConfirm={() => setKickoutMessage(null)} />
+        </>
+      );
+    }
+    return (
+      <>
+        <LoginPage portal="admin" onLoginSuccess={handleAdminLoginSuccess} onNavigate={navigate} />
+        <KickoutModal message={kickoutMessage} onConfirm={() => setKickoutMessage(null)} />
+      </>
+    );
+  }
+
+  // 2. Phân luồng Cổng Tool Làm Việc (/)
+  if (!isToolLoggedIn) {
+    return (
+      <>
+        <LoginPage portal="tool" onLoginSuccess={handleToolLoginSuccess} onNavigate={navigate} />
+        <KickoutModal message={kickoutMessage} onConfirm={() => setKickoutMessage(null)} />
+      </>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="h-screen bg-slate-50 flex flex-col font-['Plus_Jakarta_Sans',sans-serif] overflow-hidden">
       {/* Toast Notification */}
       {toast && (
         <div className="fixed top-4 right-6 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -483,6 +781,8 @@ export const App: React.FC = () => {
         isLoading={isLoading}
         isAutoInstallingPlugin={isAutoInstallingPlugin}
         isPushingCode={isPushingCode}
+        showLivePreview={showLivePreview}
+        onToggleLivePreview={() => setShowLivePreview(!showLivePreview)}
         onSelectSite={handleSelectSite}
         onOpenConnectModal={() => {
           setEditingSite(null);
@@ -497,6 +797,10 @@ export const App: React.FC = () => {
         onOpenDeployModal={() => setIsDeployModalOpen(true)}
         onAutoInstallPlugin={() => currentSite && handleAutoInstallPlugin(currentSite)}
         onPushPluginCode={() => currentSite && handlePushPluginCode(currentSite)}
+        onResetSiteState={handleResetCurrentSiteState}
+        currentUser={toolUser || adminUser}
+        onOpenAdmin={() => navigate('/admin')}
+        onLogout={handleToolLogout}
       />
 
       {/* Connected Site Status Bar */}
@@ -519,8 +823,46 @@ export const App: React.FC = () => {
                 • <strong className="text-white">{inspectData.stats.published_pages}</strong> Trang & <strong className="text-white">{inspectData.stats.published_posts ?? 0}</strong> Bài viết
               </span>
             )}
+
+            {/* Favicon Quick Indicator */}
+            <button
+              type="button"
+              onClick={() => {
+                setCurrentStep(2); // Step 3: Cấu Hình Theme
+                setTimeout(() => {
+                  const el = document.getElementById('section-favicon');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}
+              title="Nhấp để tới mục Cài đặt Favicon cho website"
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-800/90 hover:bg-slate-700 border border-slate-700 transition cursor-pointer text-slate-200"
+            >
+              {inspectData?.site?.site_icon_url || inspectData?.flatsome?.site_icon_url || themeConfig.siteIconUrl ? (
+                <>
+                  <img
+                    src={inspectData?.site?.site_icon_url || inspectData?.flatsome?.site_icon_url || themeConfig.siteIconUrl}
+                    alt="Favicon"
+                    className="w-3.5 h-3.5 object-contain rounded-xs"
+                  />
+                  <span className="text-emerald-300 font-semibold">Favicon: Đã Cài</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-[9px] font-black text-amber-300 bg-amber-500/20 px-1 rounded-xs border border-amber-400/30">W</span>
+                  <span className="text-amber-300 font-medium">Đổi Favicon (Chữ W)</span>
+                </>
+              )}
+            </button>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleResetCurrentSiteState}
+              title="Xóa cache và đưa toàn bộ thiết lập (Theme, Bố cục, Menu, Footer) của website này về mặc định sạch để làm mới độc lập"
+              className="text-rose-300 hover:text-white flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-md bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 transition cursor-pointer font-medium"
+            >
+              <RotateCcw className="w-3 h-3 text-rose-400" /> Đặt lại mặc định site này
+            </button>
             <button
               type="button"
               onClick={() => syncSiteData(currentSite)}
@@ -544,7 +886,7 @@ export const App: React.FC = () => {
         />
 
         {/* Center Workspace Content */}
-        <main className="flex-1 overflow-y-auto p-6 flex justify-center">
+        <main className={`flex-1 overflow-y-auto p-6 ${!currentSite ? 'flex justify-center items-center' : ''}`}>
           {!currentSite ? (
             <div className="max-w-md my-auto text-center p-8 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-4">
               <div className="w-14 h-14 mx-auto rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -567,7 +909,7 @@ export const App: React.FC = () => {
               </button>
             </div>
           ) : (
-            <div className={`w-full ${currentStep === 4 ? 'max-w-6xl' : 'max-w-3xl'} space-y-4`}>
+            <div className={`w-full ${showLivePreview ? 'max-w-4xl mx-auto' : 'w-full'} space-y-4`}>
               {/* Prominent Connection Error Banner */}
               {connectionError && !inspectData && (
                 <div className="bg-red-50/90 border border-red-200 text-red-900 p-5 rounded-2xl shadow-sm space-y-3">
@@ -661,47 +1003,73 @@ export const App: React.FC = () => {
                   onChangeThemeConfig={setThemeConfig}
                   onNextStep={() => setCurrentStep(4)}
                   onPrevStep={() => setCurrentStep(2)}
+                  inspectData={inspectData}
                 />
               )}
               {currentStep === 4 && (
+                <StepSiteBackground
+                  currentSite={currentSite}
+                  themeConfig={themeConfig}
+                  onChangeThemeConfig={setThemeConfig}
+                  onNextStep={() => setCurrentStep(5)}
+                  onPrevStep={() => setCurrentStep(3)}
+                />
+              )}
+              {currentStep === 5 && (
                 <StepMenuManager
                   currentSite={currentSite}
                   onRefreshInspect={() => syncSiteData(currentSite)}
-                  onNextStep={() => setCurrentStep(5)}
-                  onPrevStep={() => setCurrentStep(3)}
+                  onNextStep={() => setCurrentStep(6)}
+                  onPrevStep={() => setCurrentStep(4)}
                   onMenuChange={setMenuItems}
                   onStylingChange={setMenuStyling}
                 />
               )}
-              {currentStep === 5 && (
+              {currentStep === 6 && (
                 <Step3HomepageBuilder
                   currentSite={currentSite}
                   sections={sections}
                   onChangeSections={setSections}
-                  onNextStep={() => setCurrentStep(6)}
-                  onPrevStep={() => setCurrentStep(4)}
+                  onNextStep={() => setCurrentStep(7)}
+                  onPrevStep={() => setCurrentStep(5)}
                 />
               )}
-              {currentStep === 6 && (
+              {currentStep === 7 && (
+                <StepSubpageStyling
+                  currentSite={currentSite}
+                  styling={subpageStyling}
+                  onChangeStyling={setSubpageStyling}
+                  onNextStep={() => setCurrentStep(8)}
+                  onPrevStep={() => setCurrentStep(6)}
+                  onAutoInstallPlugin={() => currentSite && handleAutoInstallPlugin(currentSite)}
+                  isAutoInstallingPlugin={isAutoInstallingPlugin}
+                />
+              )}
+              {currentStep === 8 && (
                 <Step4FooterPicker
                   footerConfig={footerConfig}
                   onChangeFooterConfig={setFooterConfig}
+                  menuItems={menuItems}
+                  currentSite={currentSite}
                   onNextStep={() => setIsDeployModalOpen(true)}
-                  onPrevStep={() => setCurrentStep(5)}
+                  onPrevStep={() => setCurrentStep(7)}
                 />
               )}
             </div>
           )}
         </main>
 
-        {/* Right Live Preview Mockup */}
-        <LivePreview
-          themeConfig={themeConfig}
-          footerConfig={footerConfig}
-          sections={sections}
-          menuItems={menuItems}
-          menuStyling={menuStyling}
-        />
+        {/* Right Live Preview Mockup (Tắt mặc định để mở rộng tối đa khu vực cài đặt) */}
+        {showLivePreview && (
+          <LivePreview
+            themeConfig={themeConfig}
+            footerConfig={footerConfig}
+            sections={sections}
+            menuItems={menuItems}
+            menuStyling={menuStyling}
+            onClose={() => setShowLivePreview(false)}
+          />
+        )}
       </div>
 
       {/* Modals */}
@@ -730,6 +1098,12 @@ export const App: React.FC = () => {
           onDeploySuccess={() => syncSiteData(currentSite)}
         />
       )}
+
+      {/* Cửa sổ thông báo bị đá phiên */}
+      <KickoutModal
+        message={kickoutMessage}
+        onConfirm={() => setKickoutMessage(null)}
+      />
     </div>
   );
 };

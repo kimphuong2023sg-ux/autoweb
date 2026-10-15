@@ -1,4 +1,4 @@
-import { ConnectedSite, ThemeConfig, FooterConfig, SectionItem, SeoEssentialsConfig } from '../types';
+import { ConnectedSite, ThemeConfig, FooterConfig, SectionItem, SeoEssentialsConfig, SubpageStylingConfig } from '../types';
 
 const API_BASE = '/api';
 
@@ -38,6 +38,19 @@ export const api = {
     return res.json();
   },
 
+  async installFlatsomeTheme(site: ConnectedSite) {
+    const res = await fetch(`${API_BASE}/bridge/install-flatsome-theme`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(this.getAuthPayload(site)),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Lỗi cài đặt theme Flatsome' }));
+      throw new Error(err.message || 'Lỗi cài đặt theme Flatsome lên website');
+    }
+    return res.json();
+  },
+
   formatThemeMods(themeConfig: ThemeConfig) {
     return {
       color_primary: themeConfig.colorPrimary,
@@ -57,7 +70,7 @@ export const api = {
       header_height_transparent: 90,
       header_bg: themeConfig.headerBg,
       header_color: themeConfig.headerColor,
-      header_width: themeConfig.headerWidth,
+      header_width: themeConfig.headerWidth || 'container',
 
       // Header Bottom
       header_bottom_show: themeConfig.headerBottomShow,
@@ -97,6 +110,32 @@ export const api = {
       header_show_account: themeConfig.headerShowAccount,
       header_show_contact: themeConfig.headerShowContact,
       header_contact_text: themeConfig.headerContactText,
+
+      // Flatsome Native Header Builder Slots
+      topbar_elements_left: themeConfig.topbarElementsLeft || [],
+      topbar_elements_center: themeConfig.topbarElementsCenter || [],
+      topbar_elements_right: themeConfig.topbarElementsRight || [],
+      header_elements_left: themeConfig.headerElementsLeft || [],
+      header_elements_center: themeConfig.headerElementsCenter || [],
+      header_elements_right: themeConfig.headerElementsRight || [],
+      header_elements_bottom_left: themeConfig.headerElementsBottomLeft || [],
+      header_elements_bottom_center: themeConfig.headerElementsBottomCenter || [],
+      header_elements_bottom_right: themeConfig.headerElementsBottomRight || [],
+
+      // Element Content (HTML, Blocks, Contact)
+      topbar_left: themeConfig.topbarLeftHtml || '',
+      topbar_right: themeConfig.topbarRightHtml || '',
+      top_right_text: themeConfig.html3Text || '',
+      nav_position_text_top: themeConfig.html4Text || '',
+      nav_position_text: themeConfig.html5Text || '',
+      header_block_1: themeConfig.headerBlock1 || '',
+      header_block_2: themeConfig.headerBlock2 || '',
+      header_block_3: themeConfig.headerBlock3 || '',
+      header_block_4: themeConfig.headerBlock4 || '',
+      contact_phone: themeConfig.contactPhone || '',
+      contact_email: themeConfig.contactEmail || '',
+      contact_location: themeConfig.contactLocation || '',
+      contact_hours: themeConfig.contactHours || '',
     };
   },
 
@@ -110,6 +149,77 @@ export const api = {
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: 'Lỗi áp dụng theme mods' }));
       throw new Error(err.message || 'Lỗi cập nhật cấu hình theme');
+    }
+    return res.json();
+  },
+
+  async applySiteBackground(site: ConnectedSite, themeConfig: ThemeConfig) {
+    const payload = {
+      header_width: themeConfig.headerWidth || 'full-width',
+      header_bottom_width: themeConfig.headerWidth === 'container' ? 'container' : 'full-width',
+      site_bg_type: themeConfig.siteBgType || 'color',
+      site_bg_color: themeConfig.siteBgColor || '#ffffff',
+      site_bg_gradient_color1: themeConfig.siteBgGradientColor1 || '#0f172a',
+      site_bg_gradient_color2: themeConfig.siteBgGradientColor2 || '#1e293b',
+      site_bg_gradient_angle: themeConfig.siteBgGradientAngle ?? 135,
+      site_bg_gradient_type: themeConfig.siteBgGradientType || 'linear',
+      site_bg_image: themeConfig.siteBgImage || '',
+      site_bg_image_id: themeConfig.siteBgImageId || 0,
+      site_bg_image_repeat: themeConfig.siteBgImageRepeat || 'no-repeat',
+      site_bg_image_size: themeConfig.siteBgImageSize || 'cover',
+      site_bg_image_position: themeConfig.siteBgImagePosition || 'center center',
+      site_bg_image_attachment: themeConfig.siteBgImageAttachment || 'fixed',
+      site_bg_overlay_color: themeConfig.siteBgOverlayColor || 'rgba(0, 0, 0, 0.45)',
+      site_bg_overlay_enable: themeConfig.siteBgOverlayEnable ? 1 : 0,
+      restore_front_page_blank: true,
+    };
+    const res = await fetch(`${API_BASE}/bridge/theme-mods`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...this.getAuthPayload(site), themeMods: payload }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Lỗi áp dụng nền website' }));
+      throw new Error(err.message || 'Lỗi cập nhật nền website');
+    }
+    return res.json();
+  },
+
+  async restoreFrontPageBlank(site: ConnectedSite) {
+    const payload = {
+      restore_front_page_blank: true,
+      default_page_template: 'full-width',
+    };
+    const res = await fetch(`${API_BASE}/bridge/theme-mods`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...this.getAuthPayload(site), themeMods: payload }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Lỗi khôi phục trang chủ' }));
+      throw new Error(err.message || 'Lỗi khôi phục trang chủ');
+    }
+    return res.json();
+  },
+
+  async setFavicon(
+    site: ConnectedSite,
+    data: {
+      mediaId?: number;
+      fileData?: string;
+      imageUrl?: string;
+      filename?: string;
+      remove?: boolean;
+    },
+  ) {
+    const res = await fetch(`${API_BASE}/bridge/set-favicon`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...this.getAuthPayload(site), ...data }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Lỗi cập nhật Favicon' }));
+      throw new Error(err.message || 'Lỗi cập nhật Favicon cho website');
     }
     return res.json();
   },
@@ -442,6 +552,22 @@ export const api = {
       fetch(`${API_BASE}/templates/footers`).then((r) => r.json()),
     ]);
     return { sections, niches, footers };
+  },
+
+  async saveSubpageStyling(site: ConnectedSite, styling: SubpageStylingConfig) {
+    const res = await fetch(`${API_BASE}/bridge/save-subpage-styling`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...this.getAuthPayload(site),
+        styling,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Lỗi lưu cấu hình style trang con' }));
+      throw new Error(err.message || 'Lỗi lưu cấu hình style trang con lên WordPress');
+    }
+    return res.json();
   },
 };
 

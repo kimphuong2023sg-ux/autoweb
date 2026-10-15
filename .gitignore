@@ -1,2 +1,18 @@
 node_modules/
+
+# Environment variables - KHÔNG commit lên git (chứa thông tin nhạy cảm)
 .env
+.env.local
+.env.*.local
+server/.env
+client/.env
+
+# Data directory (auth-db.json, users, audit logs)
+data/
+server/data/
+*.tmp
+
+# Cho phép commit file mẫu này (không có giá trị thực)
+!.env.example
+!server/.env.example
+!client/.env.example

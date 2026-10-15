@@ -55,7 +55,16 @@ export declare class BridgeController {
         message: string;
         inspect: any;
     }>;
-    pushPluginCode(body: AuthBody): Promise<any>;
+    installFlatsomeTheme(body: AuthBody): Promise<{
+        success: boolean;
+        message: any;
+        inspect: any;
+    }>;
+    pushPluginCode(body: AuthBody): Promise<{
+        success: boolean;
+        message: string;
+        inspect: any;
+    }>;
     uploadMedia(body: AuthBody & {
         mediaId?: number;
         media_id?: number;
@@ -76,7 +85,19 @@ export declare class BridgeController {
         caption?: string;
         description?: string;
     }): Promise<any>;
-    listMedia(body: AuthBody): Promise<any>;
+    setFavicon(body: AuthBody & {
+        mediaId?: number;
+        media_id?: number;
+        fileData?: string;
+        imageUrl?: string;
+        filename?: string;
+        remove?: boolean;
+    }): Promise<any>;
+    listMedia(body: AuthBody): Promise<{
+        success: boolean;
+        media: any[];
+        total: any;
+    }>;
     deleteMedia(body: AuthBody & {
         mediaId?: number;
         id?: number;
@@ -93,6 +114,9 @@ export declare class BridgeController {
         items: any[];
         locations?: string[];
         styling?: any;
+    }): Promise<any>;
+    saveSubpageStyling(body: AuthBody & {
+        styling: any;
     }): Promise<any>;
 }
 export {};

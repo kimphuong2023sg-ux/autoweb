@@ -16,8 +16,10 @@ import {
   ChevronRight,
   Layers,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { ThemeConfig, FooterConfig, SectionItem, MenuItem, MenuStylingConfig } from '../types';
+import { formatRichText } from '../utils/textFormatter';
 
 interface LivePreviewProps {
   themeConfig: ThemeConfig;
@@ -25,6 +27,7 @@ interface LivePreviewProps {
   sections: SectionItem[];
   menuItems?: MenuItem[];
   menuStyling?: MenuStylingConfig;
+  onClose?: () => void;
 }
 
 export const LivePreview: React.FC<LivePreviewProps> = ({
@@ -33,6 +36,7 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
   sections,
   menuItems,
   menuStyling,
+  onClose,
 }) => {
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -65,6 +69,16 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
             <Smartphone className="w-3.5 h-3.5" />
           </button>
         </div>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+            title="Đóng khung xem trước để mở rộng toàn bộ không gian cài đặt"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Preview Screen Container */}
@@ -1054,20 +1068,50 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
 
                   {/* IMAGE BOX */}
                   {sec.type === 'image_box' && (
-                    <div className="bg-slate-50 border border-slate-200 rounded-lg overflow-hidden text-center p-2">
-                      <div className="h-16 bg-slate-200 rounded mb-1.5 overflow-hidden flex items-center justify-center text-slate-400 text-[8px]">
-                        {sec.data?.imageUrl ? (
-                          <img
-                            src={sec.data.imageUrl}
-                            alt={sec.data.alt || 'Box'}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          'Hình Ảnh Minh Họa'
-                        )}
-                      </div>
-                      <h4 className="font-bold text-[9px] text-slate-800">{sec.title || 'Tiêu Đề Image Box'}</h4>
-                      <p className="text-[7px] text-slate-500 line-clamp-1">{sec.subtitle || 'Mô tả chi tiết nội dung'}</p>
+                    <div className="space-y-1.5">
+                      {sec.title && (
+                        <h4 className="font-bold text-[10px] text-slate-800 text-center">{sec.title}</h4>
+                      )}
+                      {sec.subtitle && (
+                        <p className="text-[8px] text-slate-500 text-center mb-1 line-clamp-1">{sec.subtitle}</p>
+                      )}
+                      {Array.isArray(sec.data?.items) && sec.data.items.length > 0 ? (
+                        <div className={`grid grid-cols-${sec.data.items.length === 2 ? '2' : sec.data.items.length >= 4 ? '4' : '3'} gap-1.5`}>
+                          {sec.data.items.map((item: any, i: number) => (
+                            <div key={i} className="bg-slate-50 border border-slate-200 rounded-lg overflow-hidden text-center p-1.5 shadow-2xs">
+                              <div className="h-14 bg-slate-200 rounded mb-1 overflow-hidden flex items-center justify-center text-slate-400 text-[8px]">
+                                {item.img || item.imageUrl || sec.data?.imageUrl ? (
+                                  <img
+                                    src={item.img || item.imageUrl || sec.data?.imageUrl}
+                                    alt={item.title || 'Image'}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  '🖼️ Ảnh'
+                                )}
+                              </div>
+                              <h5 className="font-bold text-[8px] text-slate-800 line-clamp-1">{item.title || `Khối ${i + 1}`}</h5>
+                              {item.desc && <p className="text-[7px] text-slate-500 line-clamp-1">{item.desc}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="bg-slate-50 border border-slate-200 rounded-lg overflow-hidden text-center p-2">
+                          <div className="h-16 bg-slate-200 rounded mb-1.5 overflow-hidden flex items-center justify-center text-slate-400 text-[8px]">
+                            {sec.data?.imageUrl ? (
+                              <img
+                                src={sec.data.imageUrl}
+                                alt={sec.data.alt || 'Box'}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              'Hình Ảnh Minh Họa'
+                            )}
+                          </div>
+                          <h4 className="font-bold text-[9px] text-slate-800">{sec.title || 'Tiêu Đề Image Box'}</h4>
+                          <p className="text-[7px] text-slate-500 line-clamp-1">{sec.subtitle || 'Mô tả chi tiết nội dung'}</p>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1176,14 +1220,65 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
                   )}
 
                   {/* TEXT BLOCK */}
-                  {sec.type === 'text_block' && (
-                    <div className="p-2 text-center">
-                      <h4 className="font-bold text-slate-900 text-xs mb-0.5">{sec.title || 'Tiêu Đề Đoạn Văn'}</h4>
-                      <p className="text-[8px] text-slate-600 line-clamp-2">
-                        {sec.content || 'Đoạn văn giới thiệu nội dung chuẩn SEO biên soạn chuyên sâu.'}
-                      </p>
-                    </div>
-                  )}
+                  {sec.type === 'text_block' && (() => {
+                    const data = sec.data || {};
+                    const boxEnabled = Boolean(data.boxEnabled);
+                    const isLight = data.boxTextColor === 'light' || data.boxTextColor === 'gold' || sec.textColor === 'light';
+                    const isGoldTitle = data.boxTextColor === 'gold';
+
+                    const boxBorderW = data.boxBorderWidth !== undefined ? Number(data.boxBorderWidth) : 1;
+                    const boxBorderColor = data.boxBorderColor || '#f59e0b';
+                    const boxBorderStyle = data.boxBorderStyle || 'solid';
+                    const boxRadius = data.boxRadius !== undefined ? Number(data.boxRadius) : 12;
+
+                    let shadowCss: string | undefined = undefined;
+                    if (data.boxShadow === 'subtle') shadowCss = '0 2px 8px rgba(0,0,0,0.08)';
+                    else if (data.boxShadow === 'medium') shadowCss = '0 6px 18px rgba(0,0,0,0.2)';
+                    else if (data.boxShadow === 'deep') shadowCss = '0 12px 28px rgba(0,0,0,0.35)';
+                    else if (data.boxShadow === 'glow-gold') shadowCss = '0 0 15px rgba(245, 158, 11, 0.4), 0 4px 15px rgba(0,0,0,0.3)';
+                    else if (data.boxShadow === 'glow-primary') shadowCss = '0 0 15px rgba(37, 99, 235, 0.4), 0 4px 15px rgba(0,0,0,0.3)';
+                    else if (data.boxShadow === 'glow-cyan') shadowCss = '0 0 15px rgba(6, 182, 212, 0.4), 0 4px 15px rgba(0,0,0,0.3)';
+
+                    const boxStyle: React.CSSProperties = boxEnabled ? {
+                      backgroundColor: data.boxBgColor || 'rgba(15, 23, 42, 0.85)',
+                      border: boxBorderW > 0 ? `${boxBorderW}px ${boxBorderStyle} ${boxBorderColor}` : 'none',
+                      borderRadius: `${boxRadius}px`,
+                      padding: data.boxPadding || '16px 20px',
+                      boxShadow: shadowCss,
+                      backdropFilter: data.boxBackdropBlur ? 'blur(8px)' : undefined,
+                      WebkitBackdropFilter: data.boxBackdropBlur ? 'blur(8px)' : undefined,
+                      color: isLight ? '#f1f5f9' : '#1e293b',
+                      maxWidth: data.boxMaxWidth && data.boxMaxWidth !== '100%' ? data.boxMaxWidth : '100%',
+                      margin: '0 auto',
+                    } : {
+                      color: isLight ? '#f1f5f9' : '#1e293b',
+                    };
+
+                    const titleColor = isGoldTitle ? '#fbbf24' : (isLight ? '#ffffff' : '#0f172a');
+                    const contentTextColor = isLight ? '#f1f5f9' : '#334155';
+
+                    return (
+                      <div className="p-3 text-left">
+                        <div style={boxStyle} className="transition-all duration-200">
+                          {sec.title && (
+                            <h4
+                              style={{ color: titleColor }}
+                              className="font-bold text-xs mb-1.5"
+                            >
+                              {sec.title}
+                            </h4>
+                          )}
+                          <div
+                            style={{ color: contentTextColor }}
+                            className="text-[9px] leading-relaxed max-h-48 overflow-y-auto prose prose-xs"
+                            dangerouslySetInnerHTML={{
+                              __html: sec.content || sec.subtitle || '<p>Đoạn văn giới thiệu nội dung chuẩn SEO biên soạn chuyên sâu.</p>',
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* TITLE DIVIDER */}
                   {sec.type === 'title_divider' && (
@@ -1201,25 +1296,362 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
           </div>
 
           {/* Mock Footer UX Block */}
-          <div className="bg-slate-900 text-slate-300 p-3 text-[9px]">
-            <div className="grid grid-cols-2 gap-2 mb-2">
-              <div>
-                <div className="font-bold text-white mb-0.5">{footerConfig.brandName || 'Thương Hiệu'}</div>
-                <div className="text-slate-400 text-[8px] line-clamp-2">
-                  {footerConfig.bio || 'Đơn vị uy tín chuyên cung cấp các giải pháp chất lượng cao.'}
-                </div>
+          {(() => {
+            const renderFooterBrand = (customClass = 'font-bold text-white mb-0.5 truncate', defaultText = 'Thương Hiệu') => {
+              if (footerConfig.logoUrl) {
+                return (
+                  <div className="mb-1">
+                    <img
+                      src={footerConfig.logoUrl}
+                      alt={footerConfig.brandName || 'Logo'}
+                      style={{ maxWidth: `${footerConfig.logoWidth ? Math.min(footerConfig.logoWidth * 0.55, 110) : 85}px`, maxHeight: '32px' }}
+                      className="object-contain"
+                    />
+                  </div>
+                );
+              }
+              return <div className={customClass}>{footerConfig.brandName || defaultText}</div>;
+            };
+
+            const renderCenterBrand = () => {
+              if (footerConfig.logoUrl) {
+                return (
+                  <div className="mb-1.5 flex justify-center">
+                    <img
+                      src={footerConfig.logoUrl}
+                      alt={footerConfig.brandName || 'Logo'}
+                      style={{ maxWidth: `${footerConfig.logoWidth ? Math.min(footerConfig.logoWidth * 0.6, 130) : 95}px`, maxHeight: '36px' }}
+                      className="object-contain"
+                    />
+                  </div>
+                );
+              }
+              return <div className="font-extrabold text-white text-[11px] mb-1">{footerConfig.brandName || 'BRAND NAME'}</div>;
+            };
+
+            const renderCol4Extra = () => (
+              <>
+                {footerConfig.col4WorkingHours && (
+                  <div className="truncate text-amber-300/80">⏰ {footerConfig.col4WorkingHours}</div>
+                )}
+                {footerConfig.col4ExtraInfo && (
+                  <div className="truncate text-slate-400">📌 {footerConfig.col4ExtraInfo}</div>
+                )}
+                {footerConfig.col4Links && footerConfig.col4Links.length > 0 && (
+                  footerConfig.col4Links.map((l, i) => {
+                    const text = (l.text || '').trim();
+                    if (!text) return null;
+                    if (text.includes(':')) {
+                      const colonIdx = text.indexOf(':');
+                      const label = text.substring(0, colonIdx).trim();
+                      const val = text.substring(colonIdx + 1).trim();
+                      return (
+                        <div key={i} className="truncate text-slate-300">
+                          <strong className="text-white font-semibold">{label}:</strong>{' '}
+                          <span className="text-amber-400 underline">{val}</span>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div key={i} className="truncate text-amber-400 underline">
+                        🔗 {text}
+                      </div>
+                    );
+                  })
+                )}
+                {footerConfig.col4LinkText && (
+                  <div className="mt-1">
+                    <span className="inline-block bg-amber-500 text-black font-bold px-1.5 py-0.5 rounded-full text-[6.5px] truncate max-w-full">
+                      💬 {footerConfig.col4LinkText}
+                    </span>
+                  </div>
+                )}
+              </>
+            );
+
+            const getFooterBgStyle = (): React.CSSProperties => {
+              const bgType = footerConfig.bgType || (footerConfig.bgImage ? 'image' : footerConfig.bgGradient ? 'gradient' : 'solid');
+              if (bgType === 'image' && footerConfig.bgImage) {
+                const overlay = footerConfig.bgOverlay || 'rgba(0, 0, 0, 0.72)';
+                return {
+                  backgroundImage: `linear-gradient(${overlay}, ${overlay}), url('${footerConfig.bgImage}')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                };
+              }
+              if (bgType === 'gradient' && footerConfig.bgGradient) {
+                return {
+                  background: footerConfig.bgGradient,
+                };
+              }
+              return { backgroundColor: footerConfig.bgColor || '#0b0f19' };
+            };
+
+            return (
+              <div
+                style={getFooterBgStyle()}
+                className="text-slate-300 p-3 text-[9px] relative overflow-hidden transition-all"
+              >
+                {/* 1. MẪU CASINO & GAMING VIP */}
+                {footerConfig.layout === 'casino-luxury' && (
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+                      <div>
+                        {renderFooterBrand('font-extrabold text-amber-400 mb-0.5 truncate', 'CASINO VIP')}
+                        <div
+                          className="text-slate-400 text-[8px] line-clamp-6 leading-tight whitespace-normal break-words"
+                          dangerouslySetInnerHTML={{
+                            __html: formatRichText(footerConfig.bio || 'Sòng bài trực tuyến uy tín & an toàn hàng đầu.', '#fbbf24')
+                          }}
+                        />
+                        <div className="inline-flex items-center gap-1 bg-amber-500/10 border border-amber-500/40 rounded px-1.5 py-0.5 mt-1.5">
+                          <span className="bg-amber-500 text-black font-extrabold text-[7px] px-1 rounded-sm">18+</span>
+                          <span className="text-amber-300 text-[7px] font-bold">{footerConfig.badgeText || 'Juego Responsable'}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-bold text-white mb-0.5 truncate border-b border-amber-500/40 pb-0.5">{footerConfig.col2Title || 'Acerca de'}</div>
+                        <div className="text-slate-400 text-[7.5px] space-y-0.5 mt-1">
+                          {(footerConfig.col2Links || [{ text: 'Quiénes Somos', url: '#' }, { text: 'Privacidad', url: '#' }]).slice(0, 4).map((l, i) => (
+                            <div key={i} className="truncate text-slate-300">• {l.text}</div>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-bold text-white mb-0.5 truncate border-b border-amber-500/40 pb-0.5">{footerConfig.col3Title || 'Juegos'}</div>
+                        <div className="text-slate-400 text-[7.5px] space-y-0.5 mt-1">
+                          {(footerConfig.col3Links || [{ text: 'Casino en Vivo', url: '#' }, { text: 'Lotería', url: '#' }]).slice(0, 4).map((l, i) => (
+                            <div key={i} className="truncate text-slate-300">• {l.text}</div>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-bold text-white mb-0.5 truncate border-b border-amber-500/40 pb-0.5">{footerConfig.col4Title || 'Contacto'}</div>
+                        <div className="text-slate-400 text-[7.5px] space-y-0.5 mt-1">
+                          <div className="truncate">📞 {footerConfig.hotline || '+52 55 1234 5678'}</div>
+                          <div className="truncate">✉️ {footerConfig.email || 'soporte@juegalotto.mx'}</div>
+                          {renderCol4Extra()}
+                        </div>
+                        <div className="bg-white/5 border border-amber-500/30 rounded p-1 mt-1 text-[7px] text-slate-400">
+                          🔒 SSL 256-Bit • PAGCOR & Curaçao
+                        </div>
+                      </div>
+                    </div>
+                    <div className="border-t border-slate-800 pt-1 text-center text-slate-500 text-[7.5px]">
+                      {footerConfig.disclaimerText || '18+ Chơi có trách nhiệm | Giấy phép quốc tế'} | {footerConfig.copyrightText || themeConfig.copyrightText || '© 2026 Bản quyền thuộc về Casino.'}
+                    </div>
+                  </>
+                )}
+
+                {/* 2. MẪU BÁO CHÍ & TẠP CHÍ 3 CỘT (5-3-4) */}
+                {footerConfig.layout === 'magazine-3col' && (
+                  <>
+                    <div className="grid grid-cols-12 gap-2 mb-2">
+                      <div className="col-span-5">
+                        {renderFooterBrand('font-bold text-white mb-0.5 truncate', 'TẠP CHÍ TIN TỨC')}
+                        <div
+                          className="text-slate-400 text-[8px] line-clamp-6 leading-tight whitespace-normal break-words"
+                          dangerouslySetInnerHTML={{
+                            __html: formatRichText(footerConfig.bio || 'Cổng thông tin chuyên đề cập nhật tin tức phân tích nhanh và chuẩn xác.', '#38bdf8')
+                          }}
+                        />
+                        <div className="bg-white/5 border-l-2 border-blue-500 p-1 rounded-r mt-1 text-[7px] text-slate-400">
+                          {footerConfig.disclaimerText || 'Giấy phép báo chí / Bản quyền nội dung chuyên sâu.'}
+                        </div>
+                      </div>
+                      <div className="col-span-3">
+                        <div className="font-bold text-white mb-0.5 truncate">{footerConfig.col2Title || 'Chuyên Mục'}</div>
+                        <div className="text-slate-400 text-[7.5px] space-y-0.5">
+                          {(footerConfig.col2Links || [{ text: 'Tin Nổi Bật', url: '#' }, { text: 'Kinh Tế', url: '#' }]).slice(0, 4).map((l, i) => (
+                            <div key={i} className="truncate text-slate-300">• {l.text}</div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="col-span-4">
+                        <div className="font-bold text-white mb-0.5 truncate">{footerConfig.col4Title || 'Tòa Soạn & Liên Hệ'}</div>
+                        <div className="text-slate-400 text-[7.5px] space-y-0.5">
+                          <div className="truncate">📞 {footerConfig.hotline || '0988.xxx.xxx'}</div>
+                          <div className="truncate">✉️ {footerConfig.email || 'toasoan@domain.com'}</div>
+                          <div className="truncate">📍 {footerConfig.address || 'Hà Nội, VN'}</div>
+                          {renderCol4Extra()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="border-t border-slate-800 pt-1 text-center text-slate-500 text-[7.5px]">
+                      {footerConfig.copyrightText || themeConfig.copyrightText || '© 2026 Mọi quyền được bảo lưu.'}
+                    </div>
+                  </>
+                )}
+
+                {/* 3. MẪU TỐI GIẢN CĂN GIỮA (Minimalist Centered) */}
+                {footerConfig.layout === 'minimal-center' && (
+                  <div className="text-center py-1">
+                    {renderCenterBrand()}
+                    <div
+                      className="text-slate-400 text-[8px] max-w-sm mx-auto mb-1.5 leading-tight whitespace-normal break-words"
+                      dangerouslySetInnerHTML={{
+                        __html: formatRichText(footerConfig.bio || 'Đơn vị sáng tạo và cung cấp giải pháp chuyển đổi số toàn diện.', '#fbbf24')
+                      }}
+                    />
+                    <div className="flex justify-center items-center gap-2 text-[7.5px] text-slate-300 mb-1.5 flex-wrap">
+                      {[...(footerConfig.col2Links || []), ...(footerConfig.col3Links || [])].slice(0, 6).map((l, i) => (
+                        <span key={i} className="hover:text-white transition">{l.text}</span>
+                      ))}
+                    </div>
+                    <div className="text-[7.5px] text-slate-400 mb-1">
+                      📞 {footerConfig.hotline || '0988.xxx.xxx'} • ✉️ {footerConfig.email || 'lienhe@domain.com'} • 📍 {footerConfig.address || 'Hà Nội, VN'}
+                      {footerConfig.col4WorkingHours ? ` • ⏰ ${footerConfig.col4WorkingHours}` : ''}
+                    </div>
+                    {footerConfig.col4LinkText && (
+                      <div className="mb-1.5">
+                        <span className="inline-block bg-amber-500 text-black font-bold px-2 py-0.5 rounded-full text-[7px]">
+                          💬 {footerConfig.col4LinkText}
+                        </span>
+                      </div>
+                    )}
+                    <div className="border-t border-slate-800 pt-1 text-slate-500 text-[7.5px]">
+                      {footerConfig.copyrightText || themeConfig.copyrightText || '© 2026 Bản quyền thuộc về Website.'}
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. MẪU THƯƠNG MẠI & DỊCH VỤ (Ecommerce Modern) */}
+                {footerConfig.layout === 'ecommerce-modern' && (
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+                      <div>
+                        {renderFooterBrand('font-bold text-white mb-0.5 truncate', 'Thương Mại')}
+                        <div
+                          className="text-slate-400 text-[8px] line-clamp-6 leading-tight whitespace-normal break-words"
+                          dangerouslySetInnerHTML={{
+                            __html: formatRichText(footerConfig.bio || 'Hệ thống mua sắm và cung cấp sản phẩm chính hãng.', '#10b981')
+                          }}
+                        />
+                        <span className="inline-block mt-1 text-[7px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1 py-0.5 rounded">
+                          ✓ Cam kết chính hãng
+                        </span>
+                      </div>
+                      <div>
+                        <div className="font-bold text-white mb-0.5 truncate">{footerConfig.col2Title || 'Chăm Sóc Khách Hàng'}</div>
+                        <div className="text-slate-400 text-[7.5px] space-y-0.5">
+                          {(footerConfig.col2Links || [{ text: 'Hướng dẫn mua hàng', url: '#' }, { text: 'Chính sách bảo hành', url: '#' }]).slice(0, 4).map((l, i) => (
+                            <div key={i} className="truncate text-slate-300">• {l.text}</div>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-bold text-white mb-0.5 truncate">{footerConfig.col3Title || 'Sản Phẩm & Dịch Vụ'}</div>
+                        <div className="text-slate-400 text-[7.5px] space-y-0.5">
+                          {(footerConfig.col3Links || [{ text: 'Sản phẩm mới', url: '#' }, { text: 'Khuyến mãi hot', url: '#' }]).slice(0, 4).map((l, i) => (
+                            <div key={i} className="truncate text-slate-300">• {l.text}</div>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-bold text-white mb-0.5 truncate">{footerConfig.col4Title || 'Tổng Đài Mua Hàng'}</div>
+                        <div className="text-slate-400 text-[7.5px] space-y-0.5">
+                          <div className="truncate">📞 {footerConfig.hotline || '0988.xxx.xxx'}</div>
+                          <div className="truncate">✉️ {footerConfig.email || 'lienhe@domain.com'}</div>
+                          {renderCol4Extra()}
+                        </div>
+                        <div className="bg-white/5 rounded p-1 mt-1 text-[7px] text-slate-400">
+                          💳 Visa / Master • 🏦 Chuyển khoản • 🪙 USDT
+                        </div>
+                      </div>
+                    </div>
+                    <div className="border-t border-slate-800 pt-1 text-center text-slate-500 text-[8px]">
+                      {footerConfig.copyrightText || themeConfig.copyrightText || '© 2026 Bản quyền thuộc về Website.'}
+                    </div>
+                  </>
+                )}
+
+                {/* 5. MẪU TIN TỨC / AFFILIATE 2 CỘT */}
+                {footerConfig.layout === 'affiliate-2col' && (
+                  <>
+                    <div className="grid grid-cols-12 gap-2 mb-2">
+                      <div className="col-span-7">
+                        {renderFooterBrand('font-bold text-white mb-0.5 truncate', 'Thương Hiệu')}
+                        <div
+                          className="text-slate-400 text-[8px] line-clamp-6 leading-tight mb-1 whitespace-normal break-words"
+                          dangerouslySetInnerHTML={{
+                            __html: formatRichText(footerConfig.bio || 'Kênh tin tức tổng hợp đánh giá và chia sẻ thông tin uy tín.', '#f59e0b')
+                          }}
+                        />
+                        <div className="text-[7.5px] italic text-slate-500">
+                          {footerConfig.disclaimerText || 'Miễn trừ trách nhiệm: Thông tin mang tính tham khảo.'}
+                        </div>
+                      </div>
+                      <div className="col-span-5">
+                        <div className="font-bold text-white mb-0.5 truncate">{footerConfig.col4Title || 'Thông Tin Liên Hệ'}</div>
+                        <div className="text-slate-400 text-[7.5px] space-y-0.5">
+                          <div className="truncate">📞 {footerConfig.hotline || '0988.xxx.xxx'}</div>
+                          <div className="truncate">✉️ {footerConfig.email || 'lienhe@domain.com'}</div>
+                          <div className="truncate">📍 {footerConfig.address || 'Hà Nội, VN'}</div>
+                          {renderCol4Extra()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="border-t border-slate-800 pt-1 text-center text-slate-500 text-[8px]">
+                      {footerConfig.copyrightText || themeConfig.copyrightText || '© 2026 Bản quyền thuộc về Website.'}
+                    </div>
+                  </>
+                )}
+
+                {/* 6. MẪU DOANH NGHIỆP 4 CỘT TIÊU CHUẨN (Corporate 4-col) */}
+                {(!footerConfig.layout || footerConfig.layout === 'corporate-4col') && (
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+                      <div>
+                        {renderFooterBrand('font-bold text-white mb-0.5 truncate', 'Thương Hiệu')}
+                        <div
+                          className="text-slate-400 text-[8px] line-clamp-6 leading-tight whitespace-normal break-words"
+                          dangerouslySetInnerHTML={{
+                            __html: formatRichText(footerConfig.bio || 'Đơn vị uy tín chuyên cung cấp các giải pháp chất lượng cao.', '#3b82f6')
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <div className="font-bold text-white mb-0.5 truncate">{footerConfig.col2Title || 'Về Chúng Tôi'}</div>
+                        <div className="text-slate-400 text-[7.5px] space-y-0.5">
+                          {(footerConfig.col2Links || [
+                            { text: 'Giới thiệu công ty', url: '#' },
+                            { text: 'Chính sách bảo mật', url: '#' },
+                            { text: 'Điều khoản sử dụng', url: '#' },
+                          ]).slice(0, 4).map((l, i) => (
+                            <div key={i} className="truncate text-slate-300">• {l.text}</div>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-bold text-white mb-0.5 truncate">{footerConfig.col3Title || 'Dịch Vụ Chính'}</div>
+                        <div className="text-slate-400 text-[7.5px] space-y-0.5">
+                          {(footerConfig.col3Links || [
+                            { text: 'Tư vấn chiến lược', url: '#' },
+                            { text: 'Giải pháp trọn gói', url: '#' },
+                            { text: 'Tối ưu hóa chuyển đổi', url: '#' },
+                          ]).slice(0, 4).map((l, i) => (
+                            <div key={i} className="truncate text-slate-300">• {l.text}</div>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-bold text-white mb-0.5 truncate">{footerConfig.col4Title || 'Liên Hệ Nhanh'}</div>
+                        <div className="text-slate-400 text-[7.5px] space-y-0.5">
+                          <div className="truncate">📞 {footerConfig.hotline || '0988.xxx.xxx'}</div>
+                          <div className="truncate">✉️ {footerConfig.email || 'lienhe@domain.com'}</div>
+                          <div className="truncate">📍 {footerConfig.address || 'Hà Nội, VN'}</div>
+                          {renderCol4Extra()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="border-t border-slate-800 pt-1 text-center text-slate-500 text-[8px]">
+                      {footerConfig.copyrightText || themeConfig.copyrightText || '© 2026 Bản quyền thuộc về Website.'}
+                    </div>
+                  </>
+                )}
               </div>
-              <div>
-                <div className="font-bold text-white mb-0.5">Liên Hệ</div>
-                <div className="text-slate-400 text-[8px]">
-                  Hotline: {footerConfig.hotline || '0988.xxx.xxx'}
-                </div>
-              </div>
-            </div>
-            <div className="border-t border-slate-800 pt-1 text-center text-slate-500 text-[8px]">
-              {themeConfig.copyrightText || '© 2026 Bản quyền thuộc về Website.'}
-            </div>
-          </div>
+            );
+          })()}
         </div>
       </div>
     </div>

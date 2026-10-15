@@ -13,6 +13,12 @@ import {
   UploadCloud,
   Zap,
   Loader2,
+  RotateCcw,
+  Eye,
+  ExternalLink,
+  ShieldCheck,
+  LogOut,
+  User as UserIcon,
 } from 'lucide-react';
 import { ConnectedSite, WpInspectData } from '../types';
 
@@ -23,6 +29,8 @@ interface TopbarProps {
   isLoading: boolean;
   isAutoInstallingPlugin?: boolean;
   isPushingCode?: boolean;
+  showLivePreview?: boolean;
+  onToggleLivePreview?: () => void;
   onSelectSite: (site: ConnectedSite) => void;
   onOpenConnectModal: () => void;
   onEditSite: (site: ConnectedSite) => void;
@@ -31,6 +39,10 @@ interface TopbarProps {
   onOpenDeployModal: () => void;
   onAutoInstallPlugin?: () => void;
   onPushPluginCode?: () => void;
+  onResetSiteState?: () => void;
+  currentUser?: { username: string; displayName?: string; role: string } | null;
+  onOpenAdmin?: () => void;
+  onLogout?: () => void;
 }
 
 export const Topbar: React.FC<TopbarProps> = ({
@@ -40,6 +52,8 @@ export const Topbar: React.FC<TopbarProps> = ({
   isLoading,
   isAutoInstallingPlugin = false,
   isPushingCode = false,
+  showLivePreview = false,
+  onToggleLivePreview,
   onSelectSite,
   onOpenConnectModal,
   onEditSite,
@@ -48,6 +62,10 @@ export const Topbar: React.FC<TopbarProps> = ({
   onOpenDeployModal,
   onAutoInstallPlugin,
   onPushPluginCode,
+  onResetSiteState,
+  currentUser,
+  onOpenAdmin,
+  onLogout,
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -219,15 +237,32 @@ export const Topbar: React.FC<TopbarProps> = ({
           </button>
         )}
 
-        {currentSite && inspectData && onPushPluginCode && (
+        {currentSite && inspectData && onAutoInstallPlugin && (
           <button
-            onClick={onPushPluginCode}
-            disabled={isPushingCode || isLoading}
-            className="flex items-center gap-1.5 text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-2 rounded-lg transition disabled:opacity-50 cursor-pointer"
-            title="Đẩy trực tiếp code PHP mới nhất lên WordPress không cần cài lại zip (Hot-Reload)"
+            onClick={() => {
+              if (
+                window.confirm(
+                  'Bạn có chắc chắn muốn cập nhật và ghi đè Plugin Flatsome SEO Bridge lên phiên bản mới nhất từ file ZIP chuẩn trên website này?'
+                )
+              ) {
+                onAutoInstallPlugin();
+              }
+            }}
+            disabled={isAutoInstallingPlugin || isLoading}
+            className="flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-2 rounded-lg transition disabled:opacity-50 cursor-pointer"
+            title="Tải gói ZIP plugin mới nhất lên WordPress và ghi đè an toàn"
           >
-            <Zap className={`w-3.5 h-3.5 text-amber-600 ${isPushingCode ? 'animate-spin' : ''}`} />
-            <span>{isPushingCode ? 'Đang đẩy code...' : '⚡ Đẩy Code Mới'}</span>
+            {isAutoInstallingPlugin ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                <span>Đang Cập Nhật Plugin...</span>
+              </>
+            ) : (
+              <>
+                <UploadCloud className="w-3.5 h-3.5 text-blue-600" />
+                <span>📦 Cập Nhật Plugin (Ghi Đè)</span>
+              </>
+            )}
           </button>
         )}
 
@@ -243,6 +278,46 @@ export const Topbar: React.FC<TopbarProps> = ({
           </button>
         )}
 
+        {currentSite && onResetSiteState && (
+          <button
+            onClick={onResetSiteState}
+            className="flex items-center gap-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-3 py-2 rounded-lg transition cursor-pointer"
+            title="Xóa dữ liệu lưu tạm của riêng website này trong tool, đưa về mặc định sạch để không bị lẫn cài đặt của website khác"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-rose-600" />
+            <span>🧹 Đặt Lại Mặc Định Site Này</span>
+          </button>
+        )}
+
+        {currentSite && (
+          <a
+            href={currentSite.siteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-2 rounded-lg transition"
+            title="Mở trang chủ website thật trên tab mới"
+          >
+            <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
+            <span>🌐 Web Thật</span>
+          </a>
+        )}
+
+        {onToggleLivePreview && (
+          <button
+            type="button"
+            onClick={onToggleLivePreview}
+            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border transition cursor-pointer ${
+              showLivePreview
+                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                : 'bg-slate-50 text-slate-600 hover:text-slate-900 border-slate-200 hover:bg-slate-100'
+            }`}
+            title={showLivePreview ? 'Đang mở Live Preview - Bấm để ẩn và mở rộng tối đa màn hình cài đặt' : 'Mở khung Live Preview bên phải'}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>{showLivePreview ? 'Ẩn Preview' : 'Mô Phỏng'}</span>
+          </button>
+        )}
+
         <button
           onClick={onOpenDeployModal}
           disabled={!currentSite}
@@ -252,6 +327,46 @@ export const Topbar: React.FC<TopbarProps> = ({
           <Rocket className="w-4 h-4" />
           <span>Xuất Bản / Cập Nhật Web</span>
         </button>
+
+        {/* User Profile & Admin & Logout Actions */}
+        {currentUser && (
+          <div className="flex items-center gap-2 pl-3 ml-1 border-l border-slate-200">
+            {currentUser.role === 'admin' && onOpenAdmin && (
+              <button
+                onClick={onOpenAdmin}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition cursor-pointer"
+                title="Vào trang quản trị tài khoản, whitelist IP và nhật ký"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Quản Trị</span>
+              </button>
+            )}
+
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs">
+              <div className="w-6 h-6 rounded-full bg-blue-600 text-white font-bold text-[11px] flex items-center justify-center uppercase">
+                {currentUser.username ? currentUser.username.charAt(0) : 'U'}
+              </div>
+              <div className="leading-tight text-left">
+                <div className="font-bold text-slate-800 max-w-[100px] truncate text-[11px]">
+                  {currentUser.displayName || currentUser.username}
+                </div>
+                <div className="text-[9px] text-slate-400 font-medium">
+                  {currentUser.role === 'admin' ? 'Quản trị viên' : 'Nhân viên'}
+                </div>
+              </div>
+            </div>
+
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer border border-transparent hover:border-rose-100"
+                title="Đăng xuất tài khoản"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );

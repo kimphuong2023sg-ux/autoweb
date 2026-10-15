@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Palette,
   Check,
@@ -20,9 +20,25 @@ import {
   SlidersHorizontal,
   ChevronRight,
   MousePointerClick,
+  Image as ImageIcon,
+  UploadCloud,
+  Layers,
+  Eye,
+  RefreshCw,
+  Sun,
+  Moon,
+  Wand2,
+  Phone,
+  Code,
+  Box,
+  Globe,
+  FolderOpen,
+  Trash2,
+  X,
 } from 'lucide-react';
-import { ConnectedSite, ThemeConfig } from '../../types';
+import { ConnectedSite, ThemeConfig, WpInspectData, WpMediaItem } from '../../types';
 import { api } from '../../services/api';
+import { FlatsomeHeaderBuilder } from './FlatsomeHeaderBuilder';
 
 interface Step2ThemeCustomizerProps {
   currentSite?: ConnectedSite | null;
@@ -30,6 +46,7 @@ interface Step2ThemeCustomizerProps {
   onChangeThemeConfig: (newConfig: ThemeConfig) => void;
   onNextStep: () => void;
   onPrevStep: () => void;
+  inspectData?: WpInspectData | null;
 }
 
 export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
@@ -38,6 +55,7 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
   onChangeThemeConfig,
   onNextStep,
   onPrevStep,
+  inspectData,
 }) => {
   const [isApplying, setIsApplying] = useState(false);
   const [applySuccess, setApplySuccess] = useState(false);
@@ -45,7 +63,7 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
 
   // Active Sub-tab for Header Customization
   const [activeHeaderTab, setActiveHeaderTab] = useState<
-    'presets' | 'main' | 'bottom' | 'buttons' | 'sticky' | 'elements'
+    'presets' | 'builder' | 'main' | 'bottom' | 'buttons' | 'sticky' | 'elements'
   >('presets');
 
   const niches = [
@@ -279,53 +297,68 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
     });
   };
 
-  const handleSelectHeaderPreset = (presetId: string) => {
+  const [applyingPresetId, setApplyingPresetId] = useState<string | null>(null);
+
+  const handleSelectHeaderPreset = (presetId: string): ThemeConfig => {
+    let updated: ThemeConfig;
     if (presetId === 'header-wide-nav-dark') {
-      onChangeThemeConfig({
+      updated = {
         ...themeConfig,
         headerPreset: presetId,
         headerLayout: 'wide-nav',
         headerHeight: 90,
         headerColor: 'dark',
         headerBg: '#161616',
+        topbarText: '', // Triệt tiêu hotline mẫu để Topbar tắt hoàn toàn
         headerBottomShow: true,
         headerBottomHeight: 45,
         headerBottomBg: themeConfig.colorPrimary || '#0f3a61',
         headerBottomColor: 'dark',
+        headerBottomWidth: 'full-width',
+        headerNavNoWrap: true,
         headerButton1Show: true,
         headerButton1Text: themeConfig.headerButton1Text || 'REGÍSTRATE',
+        headerButton1Link: themeConfig.headerButton1Link || '#register',
         headerButton1Color: 'alert',
         headerButton1Radius: '99px',
         headerButton1Style: 'is-flat',
         headerButton2Show: true,
         headerButton2Text: themeConfig.headerButton2Text || 'ENTRAR',
+        headerButton2Link: themeConfig.headerButton2Link || '#login',
         headerButton2Color: 'alert',
         headerButton2Radius: '99px',
         headerButton2Style: 'is-flat',
-      });
+        headerShowSearch: undefined,
+        headerShowCart: false,
+        headerShowAccount: false,
+      };
     } else if (presetId === 'header-wide-nav') {
-      onChangeThemeConfig({
+      updated = {
         ...themeConfig,
         headerPreset: presetId,
         headerLayout: 'wide-nav',
         headerHeight: 90,
         headerColor: 'light',
         headerBg: '#ffffff',
+        topbarText: '',
         headerBottomShow: true,
         headerBottomHeight: 45,
         headerBottomBg: '#334155',
         headerBottomColor: 'dark',
+        headerBottomWidth: 'full-width',
+        headerNavNoWrap: true,
         headerButton1Show: true,
         headerButton2Show: true,
-      });
+      };
     } else if (presetId === 'header-simple-signup') {
-      onChangeThemeConfig({
+      updated = {
         ...themeConfig,
         headerPreset: presetId,
         headerLayout: 'logo-left-menu-center',
         headerHeight: 84,
         headerColor: 'light',
         headerBg: '#ffffff',
+        topbarText: '',
         headerBottomShow: false,
         headerButton1Show: true,
         headerButton1Text: 'Đăng Ký',
@@ -333,62 +366,66 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
         headerButton2Show: true,
         headerButton2Text: 'Đăng Nhập',
         headerButton2Color: 'plain',
-      });
+      };
     } else if (presetId === 'header-simple-right-buttons') {
-      onChangeThemeConfig({
+      updated = {
         ...themeConfig,
         headerPreset: presetId,
         headerLayout: 'logo-left-menu-right',
         headerHeight: 84,
         headerColor: 'light',
         headerBg: '#ffffff',
+        topbarText: '',
         headerBottomShow: false,
         headerButton1Show: true,
         headerButton1Text: 'Mua Ngay',
         headerButton1Color: 'success',
         headerButton2Show: false,
-      });
+      };
     } else if (presetId === 'header-default-dark') {
-      onChangeThemeConfig({
+      updated = {
         ...themeConfig,
         headerPreset: presetId,
         headerLayout: 'logo-left-menu-right',
         headerHeight: 90,
         headerColor: 'dark',
         headerBg: '#0f172a',
+        topbarText: '',
         headerBottomShow: false,
         headerShowSearch: 'icon',
         headerShowCart: true,
         headerShowAccount: true,
-      });
+      };
     } else if (presetId === 'header-default-center') {
-      onChangeThemeConfig({
+      updated = {
         ...themeConfig,
         headerPreset: presetId,
         headerLayout: 'logo-center',
         headerHeight: 90,
         headerColor: 'light',
         headerBg: '#ffffff',
+        topbarText: '',
         headerBottomShow: false,
         headerShowSearch: 'icon',
         headerShowCart: true,
         headerShowAccount: true,
-      });
+      };
     } else if (presetId === 'header-simple') {
-      onChangeThemeConfig({
+      updated = {
         ...themeConfig,
         headerPreset: presetId,
         headerLayout: 'logo-left-menu-right',
         headerHeight: 75,
         headerColor: 'light',
         headerBg: '#ffffff',
+        topbarText: '',
         headerBottomShow: false,
         headerShowSearch: 'icon',
         headerButton1Show: false,
         headerButton2Show: false,
-      });
+      };
     } else if (presetId === 'header-cart-top') {
-      onChangeThemeConfig({
+      updated = {
         ...themeConfig,
         headerPreset: presetId,
         headerLayout: 'logo-left-menu-center',
@@ -399,21 +436,46 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
         headerShowSearch: 'form',
         headerShowCart: true,
         headerShowAccount: true,
-      });
+      };
     } else {
       // header-default
-      onChangeThemeConfig({
+      updated = {
         ...themeConfig,
         headerPreset: 'header-default',
         headerLayout: 'logo-left-menu-right',
         headerHeight: 90,
         headerColor: 'light',
         headerBg: '#ffffff',
+        topbarText: '',
         headerBottomShow: false,
         headerShowSearch: 'icon',
         headerShowCart: true,
         headerShowAccount: true,
-      });
+      };
+    }
+    onChangeThemeConfig(updated);
+    return updated;
+  };
+
+  const handleApplyPresetDirect = async (presetId: string) => {
+    const updated = handleSelectHeaderPreset(presetId);
+    if (!currentSite) {
+      alert('Vui lòng kết nối với website WordPress ở bước trên trước để áp dụng giao diện trực tiếp!');
+      return;
+    }
+    try {
+      setApplyingPresetId(presetId);
+      setIsApplying(true);
+      setApplyError(null);
+      setApplySuccess(false);
+      await api.applyThemeMods(currentSite, updated || themeConfig);
+      setApplySuccess(true);
+      setTimeout(() => setApplySuccess(false), 6000);
+    } catch (err: any) {
+      setApplyError(err.message || 'Lỗi khi cập nhật cấu hình Theme lên WordPress');
+    } finally {
+      setIsApplying(false);
+      setApplyingPresetId(null);
     }
   };
 
@@ -432,6 +494,151 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
       setIsApplying(false);
     }
   };
+
+  // --- FAVICON STATE & HANDLERS ---
+  const initialFavicon =
+    inspectData?.site?.site_icon_url ||
+    inspectData?.flatsome?.site_icon_url ||
+    themeConfig.siteIconUrl ||
+    '';
+  const [faviconPreview, setFaviconPreview] = useState<string>(initialFavicon);
+  const [faviconFile, setFaviconFile] = useState<File | null>(null);
+  const [isSettingFavicon, setIsSettingFavicon] = useState(false);
+  const [faviconNotice, setFaviconNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isFaviconMediaOpen, setIsFaviconMediaOpen] = useState(false);
+  const [wpMediaList, setWpMediaList] = useState<WpMediaItem[]>([]);
+  const [isLoadingMedia, setIsLoadingMedia] = useState(false);
+  const [mediaSearchQuery, setMediaSearchQuery] = useState('');
+
+  // Sync favicon preview when inspectData updates
+  React.useEffect(() => {
+    const liveIcon = inspectData?.site?.site_icon_url || inspectData?.flatsome?.site_icon_url;
+    if (liveIcon && !faviconFile) {
+      setFaviconPreview(liveIcon);
+    }
+  }, [inspectData]);
+
+  const handleSelectFaviconFile = (file: File) => {
+    setFaviconFile(file);
+    setFaviconNotice(null);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string;
+      setFaviconPreview(base64);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadAndSetFavicon = async () => {
+    if (!currentSite) return;
+    if (!faviconPreview) {
+      setFaviconNotice({ type: 'error', text: 'Vui lòng chọn hoặc tải ảnh biểu tượng Favicon trước khi áp dụng!' });
+      return;
+    }
+    try {
+      setIsSettingFavicon(true);
+      setFaviconNotice(null);
+      const res = await api.setFavicon(currentSite, {
+        fileData: faviconPreview,
+        filename: faviconFile?.name || `favicon-${Date.now()}.png`,
+      });
+      if (res.site_icon_url) {
+        setFaviconPreview(res.site_icon_url);
+      }
+      onChangeThemeConfig({
+        ...themeConfig,
+        siteIconId: res.site_icon,
+        siteIconUrl: res.site_icon_url || faviconPreview,
+      });
+      setFaviconFile(null);
+      setFaviconNotice({
+        type: 'success',
+        text: 'Đã cập nhật Favicon lên website thật thành công! (Mẹo: Nếu tab trình duyệt vẫn còn chữ "W" do Chrome/Edge lưu cache cứng, hãy mở trang trong Tab Ẩn Danh "Ctrl+Shift+N" để thấy ngay biểu tượng mới).',
+      });
+    } catch (err: any) {
+      setFaviconNotice({
+        type: 'error',
+        text: err.message || 'Lỗi khi tải lên và cài đặt Favicon cho website.',
+      });
+    } finally {
+      setIsSettingFavicon(false);
+    }
+  };
+
+  const handleRemoveFavicon = async () => {
+    if (!currentSite) return;
+    const ok = window.confirm('Bạn có chắc chắn muốn gỡ Favicon này và quay về biểu tượng mặc định không?');
+    if (!ok) return;
+    try {
+      setIsSettingFavicon(true);
+      setFaviconNotice(null);
+      await api.setFavicon(currentSite, { remove: true });
+      setFaviconPreview('');
+      setFaviconFile(null);
+      onChangeThemeConfig({
+        ...themeConfig,
+        siteIconId: 0,
+        siteIconUrl: '',
+      });
+      setFaviconNotice({
+        type: 'success',
+        text: 'Đã gỡ Favicon thành công. Website đã trở về biểu tượng mặc định.',
+      });
+    } catch (err: any) {
+      setFaviconNotice({
+        type: 'error',
+        text: err.message || 'Lỗi khi gỡ Favicon.',
+      });
+    } finally {
+      setIsSettingFavicon(false);
+    }
+  };
+
+  const handleOpenFaviconMediaPicker = async () => {
+    setIsFaviconMediaOpen(true);
+    if (wpMediaList.length === 0 && currentSite) {
+      try {
+        setIsLoadingMedia(true);
+        const res = await api.listMedia(currentSite);
+        if (res.media) setWpMediaList(res.media);
+      } catch (e) {
+      } finally {
+        setIsLoadingMedia(false);
+      }
+    }
+  };
+
+  const handleSelectMediaFavicon = async (item: WpMediaItem) => {
+    if (!currentSite) return;
+    try {
+      setIsSettingFavicon(true);
+      setFaviconNotice(null);
+      setIsFaviconMediaOpen(false);
+      setFaviconPreview(item.url);
+      const res = await api.setFavicon(currentSite, {
+        mediaId: item.id,
+        imageUrl: item.url,
+      });
+      onChangeThemeConfig({
+        ...themeConfig,
+        siteIconId: item.id,
+        siteIconUrl: item.url,
+      });
+      setFaviconNotice({
+        type: 'success',
+        text: `Đã cài đặt ảnh #${item.id} từ thư viện làm Favicon thành công!`,
+      });
+    } catch (err: any) {
+      setFaviconNotice({
+        type: 'error',
+        text: err.message || 'Lỗi khi cài đặt Favicon từ thư viện Media.',
+      });
+    } finally {
+      setIsSettingFavicon(false);
+    }
+  };
+
+
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -504,6 +711,344 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
       )}
 
       {/* ============================================================== */}
+      {/* SECTION: FAVICON & SITE ICON (BIỂU TƯỢNG TRANG WEB)           */}
+      {/* ============================================================== */}
+      <div id="section-favicon" className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+        {/* Header */}
+        <div className="p-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-indigo-500/20 border border-indigo-400/30 rounded-xl text-indigo-300">
+              <Globe className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold tracking-tight">Biểu Tượng Website (Favicon / Site Icon)</span>
+                <span className="text-[10px] uppercase font-extrabold bg-indigo-500/30 text-indigo-200 px-2 py-0.5 rounded-full border border-indigo-400/30 font-mono">
+                  Chuẩn 512×512px
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 mt-0.5">
+                Biểu tượng hiển thị trên tab trình duyệt, dấu trang (bookmark) và trang quản trị WordPress. Thay thế hoàn toàn icon chữ "W" mặc định.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {faviconPreview ? (
+              <span className="text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2.5 py-1 rounded-full flex items-center gap-1 font-mono">
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Đã Cài Favicon
+              </span>
+            ) : (
+              <span className="text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-400/30 px-2.5 py-1 rounded-full flex items-center gap-1 font-mono">
+                <AlertTriangle className="w-3 h-3 text-amber-400" /> Icon Mặc Định (W)
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Card Body */}
+        <div className="p-5 space-y-5">
+          {/* Notification */}
+          {faviconNotice && (
+            <div
+              className={`p-3 rounded-xl text-xs flex items-center justify-between animate-in fade-in duration-200 ${
+                faviconNotice.type === 'success'
+                  ? 'bg-emerald-50 border border-emerald-200 text-emerald-900 font-medium'
+                  : 'bg-red-50 border border-red-200 text-red-900'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {faviconNotice.type === 'success' ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                )}
+                <span>{faviconNotice.text}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFaviconNotice(null)}
+                className="text-xs text-slate-400 hover:text-slate-600 ml-2 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {/* 1. REALISTIC BROWSER TAB SIMULATION */}
+          <div className="bg-slate-900 rounded-2xl p-4 border border-slate-800 shadow-inner">
+            <div className="text-[10px] uppercase font-bold text-slate-400 mb-2.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Eye className="w-3.5 h-3.5 text-blue-400" />
+                <span>Mô Phỏng Hiển Thị Thực Tế Trên Trình Duyệt (Browser Tab)</span>
+              </span>
+              <span className="text-slate-500 font-mono text-[9px]">Google Chrome / MS Edge</span>
+            </div>
+
+            {/* Window Chrome Mockup */}
+            <div className="bg-slate-950 rounded-xl p-2.5 border border-slate-800/90 shadow-md">
+              <div className="flex items-center gap-2">
+                {/* 3 Window controls */}
+                <div className="flex items-center gap-1.5 shrink-0 px-1">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
+                </div>
+
+                {/* Simulated Tab */}
+                <div className="flex items-center gap-2 bg-slate-850 border-t border-x border-slate-700/80 rounded-t-lg px-3 py-1.5 max-w-sm shadow-xs">
+                  <div className="w-4 h-4 rounded-xs shrink-0 flex items-center justify-center overflow-hidden bg-slate-800">
+                    {faviconPreview ? (
+                      <img
+                        src={faviconPreview}
+                        alt="Favicon"
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <span className="text-[10px] font-black text-slate-400 leading-none">W</span>
+                    )}
+                  </div>
+                  <span className="text-xs font-semibold text-slate-200 truncate">
+                    {currentSite?.name || currentSite?.siteUrl?.replace(/^https?:\/\//, '') || 'Website Của Bạn'} - Trang Chủ
+                  </span>
+                  <span className="text-[10px] text-slate-500 hover:text-slate-300 ml-1">✕</span>
+                </div>
+
+                {/* New tab button */}
+                <div className="text-slate-600 text-xs px-1 font-bold">+</div>
+              </div>
+
+              {/* Address bar */}
+              <div className="mt-2 bg-slate-900 rounded-lg px-3 py-1.5 text-[11px] text-slate-400 font-mono flex items-center gap-2 border border-slate-800">
+                <span className="text-emerald-500 text-[10px]">🔒</span>
+                <span className="text-slate-300">{currentSite?.siteUrl || 'https://mx1000bet.com'}</span>
+              </div>
+            </div>
+
+            {/* Note below preview */}
+            <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-2 pt-2 border-t border-slate-800/80">
+              {faviconPreview ? (
+                <span className="text-emerald-400 font-medium flex items-center gap-1.5 text-[11px]">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>Đã nhận diện Favicon tùy chỉnh (Icon chữ W đã được thay thế hoàn toàn).</span>
+                </span>
+              ) : (
+                <span className="text-amber-400 font-medium flex items-center gap-1.5 text-[11px]">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Website đang dùng biểu tượng chữ "W" mặc định của WordPress. Hãy chọn ảnh favicon bên dưới để thay thế!</span>
+                </span>
+              )}
+
+              {currentSite && (
+                <a
+                  href={currentSite.siteUrl.startsWith('http') ? currentSite.siteUrl : `https://${currentSite.siteUrl}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] text-cyan-400 hover:text-cyan-300 underline font-medium flex items-center gap-1 shrink-0"
+                >
+                  <span>Mở Web Thật (Tab Mới)</span> ↗
+                </a>
+              )}
+            </div>
+
+            {/* Cache Notice Box */}
+            {faviconPreview && (
+              <div className="mt-2.5 p-2.5 bg-slate-800/60 border border-slate-700/60 rounded-xl text-[11px] text-slate-300 flex items-start gap-2">
+                <span className="text-sm shrink-0">💡</span>
+                <div>
+                  <strong className="text-amber-300">Tại sao tab trình duyệt web thật vẫn thấy chữ "W"?</strong>
+                  <div className="text-slate-400 mt-0.5 leading-relaxed">
+                    Trình duyệt (Chrome/Edge/Cốc Cốc) lưu bộ nhớ đệm (cache) Favicon cực kỳ lâu trong máy tính và không tự đổi ngay dù website đã cập nhật.
+                    Để kiểm tra ngay: hãy mở web trong <strong className="text-white">Tab Ẩn Danh (Ctrl + Shift + N)</strong> hoặc nhấn <strong className="text-white">Ctrl + F5</strong> trên tab website thật.
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 2. UPLOAD & CHOOSE FAVICON CONTROLS */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4 bg-slate-50 rounded-xl border border-slate-200">
+            {/* Left: Favicon Preview Box */}
+            <div className="md:col-span-3 flex flex-col items-center justify-center text-center p-3 bg-white border border-slate-200 rounded-xl shadow-2xs">
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                Ảnh Biểu Tượng
+              </div>
+              <div className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:8px_8px] flex items-center justify-center overflow-hidden relative shadow-inner">
+                {faviconPreview ? (
+                  <img
+                    src={faviconPreview}
+                    alt="Favicon Preview"
+                    className="w-16 h-16 object-contain drop-shadow-sm"
+                  />
+                ) : (
+                  <div className="text-center p-1">
+                    <span className="text-2xl font-black text-slate-400 block leading-none">W</span>
+                    <span className="text-[9px] text-slate-400 mt-1 block">Chưa có ảnh</span>
+                  </div>
+                )}
+              </div>
+              {faviconFile && (
+                <span className="text-[10px] text-blue-600 font-semibold mt-1.5 truncate max-w-[120px]" title={faviconFile.name}>
+                  {faviconFile.name}
+                </span>
+              )}
+            </div>
+
+            {/* Right: Actions */}
+            <div className="md:col-span-9 space-y-3">
+              <div className="text-xs text-slate-700">
+                <span className="font-bold text-slate-900 block mb-0.5">Tải Lên Biểu Tượng Favicon (.ico, .png, .svg, .webp, .jpg)</span>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Khuyên dùng ảnh hình vuông kích thước tối thiểu <strong>512 × 512 px</strong> có nền trong suốt (PNG/ICO/SVG) để đạt tiêu chuẩn hiển thị sắc nét nhất trên cả máy tính, iPhone và Android.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                <label className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 rounded-xl text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 cursor-pointer">
+                  <UploadCloud className="w-4 h-4 text-blue-600" />
+                  <span>Chọn File Từ Máy</span>
+                  <input
+                    type="file"
+                    accept="image/png, image/x-icon, image/vnd.microsoft.icon, image/svg+xml, image/jpeg, image/webp"
+                    className="hidden"
+                    onClick={(e) => {
+                      (e.target as HTMLInputElement).value = '';
+                    }}
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        handleSelectFaviconFile(e.target.files[0]);
+                      }
+                    }}
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={handleOpenFaviconMediaPicker}
+                  className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <FolderOpen className="w-4 h-4 text-indigo-600" />
+                  <span>Chọn Từ Thư Viện Media WP</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isSettingFavicon || !faviconPreview || !currentSite}
+                  onClick={handleUploadAndSetFavicon}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  title="Cập nhật biểu tượng này làm Favicon chính thức cho website"
+                >
+                  {isSettingFavicon ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Đang Cài Đặt...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Rocket className="w-3.5 h-3.5" />
+                      <span>Đặt Làm Favicon Ngay</span>
+                    </>
+                  )}
+                </button>
+
+                {faviconPreview && (
+                  <button
+                    type="button"
+                    disabled={isSettingFavicon}
+                    onClick={handleRemoveFavicon}
+                    className="px-3 py-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-xl text-xs font-semibold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                    title="Gỡ bỏ Favicon và quay về biểu tượng mặc định của WordPress"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Gỡ Favicon</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* MEDIA PICKER MODAL FOR FAVICON */}
+      {isFaviconMediaOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                  <FolderOpen className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">Chọn Biểu Tượng Favicon Từ Thư Viện WordPress</h3>
+                  <p className="text-[11px] text-slate-400">Nhấp vào ảnh để đặt làm Favicon cho website</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFaviconMediaOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm hình ảnh trong Media Library..."
+                  value={mediaSearchQuery}
+                  onChange={(e) => setMediaSearchQuery(e.target.value)}
+                  className="w-full bg-white border border-slate-200 text-xs rounded-xl pl-9 pr-3.5 py-2 outline-hidden focus:border-blue-500 transition"
+                />
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              {isLoadingMedia ? (
+                <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
+                  <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                  <span className="text-xs">Đang tải thư viện ảnh từ WordPress...</span>
+                </div>
+              ) : wpMediaList.length === 0 ? (
+                <div className="py-12 text-center text-xs text-slate-400">
+                  Thư viện Media hiện chưa có ảnh nào. Vui lòng chọn tải file từ máy tính.
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  {wpMediaList
+                    .filter((m) =>
+                      !mediaSearchQuery ||
+                      (m.title && m.title.toLowerCase().includes(mediaSearchQuery.toLowerCase())) ||
+                      (m.filename && m.filename.toLowerCase().includes(mediaSearchQuery.toLowerCase()))
+                    )
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => handleSelectMediaFavicon(item)}
+                        className="group rounded-xl border border-slate-200 p-2 bg-white hover:border-indigo-500 hover:shadow-md transition cursor-pointer flex flex-col items-center text-center"
+                      >
+                        <div className="w-16 h-16 rounded-lg bg-slate-50 flex items-center justify-center overflow-hidden mb-1.5 border border-slate-100">
+                          <img
+                            src={item.thumb || item.url}
+                            alt={item.alt || item.title || 'Media'}
+                            className="w-full h-full object-contain group-hover:scale-105 transition"
+                          />
+                        </div>
+                        <span className="text-[10px] text-slate-700 font-medium truncate w-full group-hover:text-indigo-600">
+                          {item.title || item.filename || `#${item.id}`}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
       {/* SECTION: TÙY BIẾN HEADER FLATSOME (HEADER BUILDER & PRESETS)   */}
       {/* ============================================================== */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
@@ -547,6 +1092,19 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
 
           <button
             type="button"
+            onClick={() => setActiveHeaderTab('builder')}
+            className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+              activeHeaderTab === 'builder'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+            }`}
+          >
+            <Layout className="w-3.5 h-3.5" />
+            <span>2. Header Builder (Kéo Thả &amp; Thêm Thành Phần)</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveHeaderTab('main')}
             className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
               activeHeaderTab === 'main'
@@ -555,7 +1113,7 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
             }`}
           >
             <Sliders className="w-3.5 h-3.5" />
-            <span>2. Header Main (Thanh Chính)</span>
+            <span>3. Header Main (Thanh Chính)</span>
           </button>
 
           <button
@@ -568,7 +1126,7 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
             }`}
           >
             <Compass className="w-3.5 h-3.5" />
-            <span>3. Header Bottom (Thanh Menu Dưới)</span>
+            <span>4. Header Bottom (Thanh Menu Dưới)</span>
           </button>
 
           <button
@@ -581,7 +1139,7 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
             }`}
           >
             <MousePointerClick className="w-3.5 h-3.5" />
-            <span>4. Nút CTA (Button 1 &amp; 2)</span>
+            <span>5. Nút CTA (Button 1 &amp; 2)</span>
           </button>
 
           <button
@@ -594,7 +1152,7 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
             }`}
           >
             <Pin className="w-3.5 h-3.5" />
-            <span>5. Sticky Header (Cố Định Cuộn)</span>
+            <span>6. Sticky Header (Cố Định Cuộn)</span>
           </button>
 
           <button
@@ -607,7 +1165,7 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
             }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>6. Thành Phần Khác</span>
+            <span>7. Nội Dung Chi Tiết (HTML, Contact, Blocks)</span>
           </button>
         </div>
 
@@ -665,6 +1223,34 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
                       </div>
 
                       <p className="text-[11px] text-slate-500 leading-snug">{preset.desc}</p>
+
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleApplyPresetDirect(preset.id);
+                          }}
+                          disabled={isApplying}
+                          className={`w-full py-1.5 px-2.5 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+                            isSelected
+                              ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                              : 'bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200'
+                          }`}
+                        >
+                          {isApplying && applyingPresetId === preset.id ? (
+                            <>
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              <span>Đang Áp Dụng Lên Web...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Rocket className="w-3 h-3" />
+                              <span>{isSelected ? '⚡ Áp Dụng Lên Web Ngay' : 'Chọn & Áp Dụng Lên Web'}</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -672,7 +1258,23 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
             </div>
           )}
 
-          {/* TAB 2: HEADER MAIN */}
+          {/* TAB 2: FLATSOME HEADER BUILDER (DRAG & DROP / ARRANGEMENT) */}
+          {activeHeaderTab === 'builder' && (
+            <FlatsomeHeaderBuilder
+              themeConfig={themeConfig}
+              onChangeThemeConfig={onChangeThemeConfig}
+              inspectData={inspectData}
+              onOpenElementSettings={(elId) => {
+                if (elId === 'button-1' || elId === 'button-2') {
+                  setActiveHeaderTab('buttons');
+                } else if (elId.startsWith('html') || elId.startsWith('block') || elId === 'contact') {
+                  setActiveHeaderTab('elements');
+                }
+              }}
+            />
+          )}
+
+          {/* TAB 3: HEADER MAIN */}
           {activeHeaderTab === 'main' && (
             <div className="space-y-5">
               <div className="border-b border-slate-100 pb-3">
@@ -714,7 +1316,10 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
 
                 {/* Header Width */}
                 <div className="p-3.5 bg-slate-50/70 border border-slate-200 rounded-xl space-y-2">
-                  <label className="text-xs font-bold text-slate-700 block">Độ Rộng Khung Header Chính (Header Width)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-700 block">Độ Rộng Thanh Chính (Logo &amp; Nút)</label>
+                    <span className="text-[10px] text-slate-500 italic">Menu dưới chỉnh riêng ở Tab 4</span>
+                  </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div
                       onClick={() => onChangeThemeConfig({ ...themeConfig, headerWidth: 'container' })}
@@ -728,7 +1333,7 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
                         <span>Có Lề Container</span>
                         {(themeConfig.headerWidth || 'container') === 'container' && <Check className="w-3.5 h-3.5 text-blue-600" />}
                       </div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">Giới hạn {themeConfig.siteWidth || '1200px'}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Giới hạn {themeConfig.siteWidth || '1200px'} (Logo &amp; nút thụt vào trong)</div>
                     </div>
                     <div
                       onClick={() => onChangeThemeConfig({ ...themeConfig, headerWidth: 'full-width' })}
@@ -739,10 +1344,10 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
                       }`}
                     >
                       <div className="text-xs flex items-center justify-center gap-1.5">
-                        <span>Full Container (Tràn 100%)</span>
+                        <span>Full Màn Hình (Tràn 100%)</span>
                         {themeConfig.headerWidth === 'full-width' && <Check className="w-3.5 h-3.5 text-blue-600" />}
                       </div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">Tràn toàn màn hình</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Tràn sát 2 mép màn hình</div>
                     </div>
                   </div>
                 </div>
@@ -885,6 +1490,7 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
                       <span>75px (Lớn)</span>
                     </div>
                   </div>
+
 
                   {/* Bottom Bar Color */}
                   <div className="p-3.5 bg-slate-50/70 border border-slate-200 rounded-xl space-y-2">
@@ -1547,6 +2153,177 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
                   </p>
                 )}
               </div>
+
+              {/* Contact Information (contact element) */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                  <Phone className="w-4 h-4 text-teal-600" />
+                  <span>Thông Tin Liên Hệ Trên Header (Contact Element)</span>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Hiển thị khi bạn thêm thành phần <strong>Contact</strong> vào bất kỳ thanh nào trên Header Builder.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                      Hotline / Số Điện Thoại
+                    </label>
+                    <input
+                      type="text"
+                      value={themeConfig.contactPhone || ''}
+                      onChange={(e) => onChangeThemeConfig({ ...themeConfig, contactPhone: e.target.value })}
+                      placeholder="+84 988 888 888"
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-900 focus:outline-hidden"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                      Email Liên Hệ
+                    </label>
+                    <input
+                      type="email"
+                      value={themeConfig.contactEmail || ''}
+                      onChange={(e) => onChangeThemeConfig({ ...themeConfig, contactEmail: e.target.value })}
+                      placeholder="support@domain.com"
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-900 focus:outline-hidden"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                      Địa Chỉ / Văn Phòng
+                    </label>
+                    <input
+                      type="text"
+                      value={themeConfig.contactLocation || ''}
+                      onChange={(e) => onChangeThemeConfig({ ...themeConfig, contactLocation: e.target.value })}
+                      placeholder="Hà Nội, Việt Nam"
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-900 focus:outline-hidden"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                      Giờ Làm Việc
+                    </label>
+                    <input
+                      type="text"
+                      value={themeConfig.contactHours || ''}
+                      onChange={(e) => onChangeThemeConfig({ ...themeConfig, contactHours: e.target.value })}
+                      placeholder="08:00 - 22:00"
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-900 focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* HTML Custom Content 1 - 5 */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                  <Code className="w-4 h-4 text-amber-600" />
+                  <span>Nội Dung HTML Tự Do (HTML 1 - HTML 5)</span>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Nhập mã HTML, icon, thẻ link &lt;a&gt; hoặc WordPress Shortcode cho các thành phần HTML 1..5 trên Header.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                      HTML 1 (topbar_left)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={themeConfig.topbarLeftHtml ?? themeConfig.topbarText ?? ''}
+                      onChange={(e) =>
+                        onChangeThemeConfig({
+                          ...themeConfig,
+                          topbarLeftHtml: e.target.value,
+                          topbarText: e.target.value,
+                        })
+                      }
+                      placeholder="Mã HTML 1..."
+                      className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-mono text-slate-800 focus:outline-hidden"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                      HTML 2 (topbar_right)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={themeConfig.topbarRightHtml || ''}
+                      onChange={(e) => onChangeThemeConfig({ ...themeConfig, topbarRightHtml: e.target.value })}
+                      placeholder="Mã HTML 2..."
+                      className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-mono text-slate-800 focus:outline-hidden"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                      HTML 3 (top_right_text)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={themeConfig.html3Text || ''}
+                      onChange={(e) => onChangeThemeConfig({ ...themeConfig, html3Text: e.target.value })}
+                      placeholder="Mã HTML 3..."
+                      className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-mono text-slate-800 focus:outline-hidden"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                      HTML 4 (nav_position_text_top)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={themeConfig.html4Text || ''}
+                      onChange={(e) => onChangeThemeConfig({ ...themeConfig, html4Text: e.target.value })}
+                      placeholder="Mã HTML 4..."
+                      className="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs font-mono text-slate-800 focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* UX Blocks Selection */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                  <Box className="w-4 h-4 text-violet-600" />
+                  <span>Gán UX Block Vào Header (Block 1 - 4)</span>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Chọn UX Block tạo bằng UX Builder để nhúng vào vị trí Block 1, Block 2, Block 3, Block 4 trên Header.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-700 block mb-1">Block 1</label>
+                    <select
+                      value={themeConfig.headerBlock1 || ''}
+                      onChange={(e) => onChangeThemeConfig({ ...themeConfig, headerBlock1: e.target.value })}
+                      className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-800"
+                    >
+                      <option value="">-- Trống --</option>
+                      {(inspectData?.ux_blocks || []).map((b) => (
+                        <option key={b.id} value={b.slug || b.id}>
+                          {b.title} ({b.slug})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-700 block mb-1">Block 2</label>
+                    <select
+                      value={themeConfig.headerBlock2 || ''}
+                      onChange={(e) => onChangeThemeConfig({ ...themeConfig, headerBlock2: e.target.value })}
+                      className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-800"
+                    >
+                      <option value="">-- Trống --</option>
+                      {(inspectData?.ux_blocks || []).map((b) => (
+                        <option key={b.id} value={b.slug || b.id}>
+                          {b.title} ({b.slug})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -1755,7 +2532,7 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
             onClick={onNextStep}
             className="px-6 py-2.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition cursor-pointer"
           >
-            Tiếp tục sang Cấu Hình Menu (Bước 4) ➔
+            Tiếp tục sang Cài Đặt Nền Website (Bước 4) ➔
           </button>
         </div>
       </div>

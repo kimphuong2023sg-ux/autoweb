@@ -89,6 +89,10 @@ let BridgeController = class BridgeController {
         this.validateCredentials(body);
         return this.bridgeService.autoInstallPlugin(body.siteUrl, this.extractAuth(body));
     }
+    async installFlatsomeTheme(body) {
+        this.validateCredentials(body);
+        return this.bridgeService.installFlatsomeTheme(body.siteUrl, this.extractAuth(body));
+    }
     async pushPluginCode(body) {
         this.validateCredentials(body);
         return this.bridgeService.pushPluginCode(body.siteUrl, this.extractAuth(body));
@@ -122,6 +126,19 @@ let BridgeController = class BridgeController {
             description: body.description,
         });
     }
+    async setFavicon(body) {
+        this.validateCredentials(body);
+        return this.bridgeService.setFavicon(body.siteUrl, this.extractAuth(body), {
+            media_id: body.mediaId || body.media_id,
+            mediaId: body.mediaId || body.media_id,
+            file_data: body.fileData,
+            fileData: body.fileData,
+            image_url: body.imageUrl,
+            imageUrl: body.imageUrl,
+            filename: body.filename,
+            remove: body.remove,
+        });
+    }
     async listMedia(body) {
         this.validateCredentials(body);
         return this.bridgeService.listMedia(body.siteUrl, this.extractAuth(body));
@@ -152,6 +169,10 @@ let BridgeController = class BridgeController {
             locations: body.locations,
             styling: body.styling,
         });
+    }
+    async saveSubpageStyling(body) {
+        this.validateCredentials(body);
+        return this.bridgeService.saveSubpageStyling(body.siteUrl, this.extractAuth(body), body.styling);
     }
 };
 exports.BridgeController = BridgeController;
@@ -233,6 +254,13 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], BridgeController.prototype, "autoInstall", null);
 __decorate([
+    (0, common_1.Post)('install-flatsome-theme'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], BridgeController.prototype, "installFlatsomeTheme", null);
+__decorate([
     (0, common_1.Post)('push-plugin-code'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -253,6 +281,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], BridgeController.prototype, "updateMedia", null);
+__decorate([
+    (0, common_1.Post)('set-favicon'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], BridgeController.prototype, "setFavicon", null);
 __decorate([
     (0, common_1.Post)('list-media'),
     __param(0, (0, common_1.Body)()),
@@ -281,6 +316,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], BridgeController.prototype, "saveMenu", null);
+__decorate([
+    (0, common_1.Post)('save-subpage-styling'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], BridgeController.prototype, "saveSubpageStyling", null);
 exports.BridgeController = BridgeController = __decorate([
     (0, common_1.Controller)('api/bridge'),
     __metadata("design:paramtypes", [bridge_service_1.BridgeService])

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, AlertTriangle, CheckCircle2, Sparkles, RefreshCw, Layers } from 'lucide-react';
+import { Trash2, AlertTriangle, CheckCircle2, Sparkles, RefreshCw, Layers, Rocket, Download, ShieldCheck, Check, Loader2 } from 'lucide-react';
 import { ConnectedSite, WpInspectData } from '../../types';
 import { api } from '../../services/api';
 
@@ -28,6 +28,26 @@ export const Step1CleanSlate: React.FC<Step1CleanSlateProps> = ({
   const [isWiping, setIsWiping] = useState(false);
   const [wipeSuccessMsg, setWipeSuccessMsg] = useState<string | null>(null);
 
+  // Trạng thái cài đặt Theme Flatsome
+  const [isInstallingTheme, setIsInstallingTheme] = useState(false);
+  const [themeInstallSuccess, setThemeInstallSuccess] = useState<string | null>(null);
+  const [themeInstallError, setThemeInstallError] = useState<string | null>(null);
+
+  const handleInstallFlatsome = async () => {
+    try {
+      setIsInstallingTheme(true);
+      setThemeInstallError(null);
+      setThemeInstallSuccess(null);
+      const res = await api.installFlatsomeTheme(currentSite);
+      setThemeInstallSuccess(res.message || 'Đã cài đặt và kích hoạt hoàn thiện Theme Flatsome thành công!');
+      await onRefreshInspect();
+    } catch (err: any) {
+      setThemeInstallError(err.message || 'Lỗi khi cài đặt theme Flatsome lên website');
+    } finally {
+      setIsInstallingTheme(false);
+    }
+  };
+
   const handleWipe = async () => {
     if (!window.confirm('Bạn có chắc chắn muốn dọn dẹp các dữ liệu rác mặc định trên website này? Thao tác này sẽ tự động xóa sạch các UX Blocks demo dư thừa, bài viết, sản phẩm, menu rác và CHỈ GIỮ LẠI ĐÚNG 1 TRANG CHỦ.')) {
       return;
@@ -37,12 +57,6 @@ export const Step1CleanSlate: React.FC<Step1CleanSlateProps> = ({
       setIsWiping(true);
       setWipeSuccessMsg(null);
 
-      // Tự động đẩy code plugin mới nhất lên WordPress để đảm bảo chạy thuật toán dọn dẹp mới nhất
-      try {
-        await api.pushPluginCode(currentSite);
-      } catch (pushErr: any) {
-        console.warn('Auto push plugin code before wipe failed or skipped:', pushErr);
-      }
 
       const res = await api.wipeDefaults(
         currentSite,
@@ -76,6 +90,114 @@ export const Step1CleanSlate: React.FC<Step1CleanSlateProps> = ({
           Dọn dẹp bài viết "Hello World", bài viết demo tiếng Anh, sản phẩm ảo và widget rác trước khi nạp giao diện mới.
         </p>
       </div>
+
+      {/* KHỐI TIỀN KIỂM TRA & CÀI ĐẶT THEME FLATSOME */}
+      {inspectData && (
+        <div className="space-y-2">
+          {/* Thông báo kết quả cài đặt thành công nếu có */}
+          {themeInstallSuccess && (
+            <div className="p-3.5 bg-emerald-50 border border-emerald-300 rounded-xl text-xs font-semibold text-emerald-800 flex items-center gap-2 animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{themeInstallSuccess}</span>
+            </div>
+          )}
+
+          {/* Thông báo lỗi nếu có */}
+          {themeInstallError && (
+            <div className="p-3.5 bg-rose-50 border border-rose-300 rounded-xl text-xs font-semibold text-rose-800 flex items-center gap-2 animate-in fade-in">
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{themeInstallError}</span>
+            </div>
+          )}
+
+          {/* 1. TRƯỜNG HỢP ĐÃ CÓ FLATSOME -> BÁO RÕ KHÔNG CẦN CÀI LẠI */}
+          {inspectData.site?.is_flatsome ? (
+            <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200/90 text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-emerald-500/20">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-bold text-sm text-emerald-950">
+                      Kiểm Tra Theme: Đã Cài Đặt & Kích Hoạt Flatsome
+                    </h3>
+                    <span className="bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      ✓ Đạt Chuẩn
+                    </span>
+                  </div>
+                  <p className="text-xs text-emerald-800 mt-1 leading-relaxed">
+                    Website đang chạy <strong>{inspectData.site.theme || 'Flatsome'}</strong> (Phiên bản: <strong>{inspectData.site.theme_version || 'v3.18.5'}</strong>). Hệ thống đã kiểm tra thấy theme Flatsome đang hoạt động hoàn hảo, <strong>không cần cài đặt lại!</strong>
+                  </p>
+                </div>
+              </div>
+
+              <div className="shrink-0 sm:self-center">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold whitespace-nowrap">
+                  <Check className="w-3.5 h-3.5 text-emerald-700" />
+                  Không Cần Cài Lại
+                </span>
+              </div>
+            </div>
+          ) : (
+            /* 2. TRƯỜNG HỢP CHƯA CÓ FLATSOME -> BÁO CHƯA CÓ VÀ CHO CÀI HOÀN THIỆN */
+            <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/90 border-2 border-amber-300 text-amber-950 shadow-xs space-y-3.5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-amber-500/20">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-bold text-sm text-amber-950">
+                        Chưa Kích Hoạt Theme Flatsome (Hiện tại: "{inspectData.site?.theme || 'Chưa xác định'}")
+                      </h3>
+                      <span className="bg-amber-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        ⚠️ Cần Cài Hoàn Thiện
+                      </span>
+                    </div>
+                    <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                      Theme Flatsome là nền tảng bắt buộc để công cụ nạp UX Builder, render shortcodes chuẩn SEO và khởi tạo giao diện. Gói cài đặt chuẩn <strong>Flatsome v3.18.5</strong> đã có sẵn trong thư mục hệ thống.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Nút hành động cài đặt */}
+              <div className="flex flex-wrap items-center gap-2.5 pt-3 border-t border-amber-200">
+                <button
+                  type="button"
+                  onClick={handleInstallFlatsome}
+                  disabled={isInstallingTheme}
+                  className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 shadow-md shadow-blue-500/20 disabled:opacity-60 cursor-pointer"
+                >
+                  {isInstallingTheme ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Đang Tải Lên & Kích Hoạt Flatsome Lên Website...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Rocket className="w-4 h-4" />
+                      <span>🚀 Tự Động Cài & Kích Hoạt Hoàn Thiện Theme Flatsome (1-Click)</span>
+                    </>
+                  )}
+                </button>
+
+                <a
+                  href="/themes/flatsome-theme-gpl-v3-18-5.zip"
+                  download="flatsome-theme-gpl-v3-18-5.zip"
+                  className="px-3.5 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 shadow-2xs"
+                  title="Tải gói zip Flatsome v3.18.5 về máy nếu muốn cài thủ công trong WP Admin"
+                >
+                  <Download className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Tải Zip Thủ Công</span>
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Diagnosis Banner */}
       <div
