@@ -231,28 +231,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 )}
               </button>
             </form>
-
-            {/* Quick credentials helper for root admin */}
-            <div className="mt-5 p-3 bg-slate-50 border border-slate-200/80 rounded-xl text-[11px] text-slate-500">
-              <div className="font-semibold text-slate-700 flex items-center gap-1.5 mb-1">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>Tài khoản Quản trị viên mặc định:</span>
-              </div>
-              <div className="flex items-center justify-between text-slate-600">
-                <span>User: <strong className="text-slate-800">admin</strong></span>
-                <span>Pass: <strong className="text-slate-800">admin@123456</strong></span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUsername('admin');
-                    setPassword('admin@123456');
-                  }}
-                  className="text-blue-600 hover:underline font-semibold cursor-pointer"
-                >
-                  Điền nhanh
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Footer thông tin IP máy khách */}
