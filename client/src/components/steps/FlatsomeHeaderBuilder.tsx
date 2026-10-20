@@ -540,22 +540,26 @@ export const FlatsomeHeaderBuilder: React.FC<FlatsomeHeaderBuilderProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-2 bg-black/70 p-2.5 rounded-xl border border-blue-900/60 shadow-inner">
-              {/* Logo block (fixed representation matching Image 2) */}
-              <div className="md:col-span-3 min-h-[60px] bg-slate-950 border border-slate-700 rounded-lg p-2.5 flex items-center justify-between gap-2 shadow-xs">
+              {/* Logo block (click to configure logo in Tab 3) */}
+              <div
+                onClick={() => onOpenElementSettings?.('logo')}
+                className="md:col-span-3 min-h-[60px] bg-slate-950 hover:bg-slate-900 border border-slate-700 hover:border-blue-500 rounded-lg p-2.5 flex items-center justify-between gap-2 shadow-xs cursor-pointer transition group"
+                title="Bấm để tải lên hoặc chỉnh sửa Logo Website"
+              >
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-blue-300 text-xs font-black">
+                  <div className="w-6 h-6 rounded bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-blue-300 text-xs font-black group-hover:bg-blue-600 group-hover:text-white transition">
                     ★
                   </div>
                   <div>
-                    <div className="text-xs font-black text-white tracking-wider flex items-center gap-1.5">
+                    <div className="text-xs font-black text-white tracking-wider flex items-center gap-1.5 group-hover:text-blue-300 transition">
                       <span>LOGO</span>
-                      <Settings className="w-3 h-3 text-slate-300" />
+                      <Settings className="w-3 h-3 text-slate-300 group-hover:text-blue-300" />
                     </div>
-                    <span className="text-[10px] text-slate-300 font-normal">Logo Website</span>
+                    <span className="text-[10px] text-slate-300 font-normal">Logo Website (Bấm để đổi)</span>
                   </div>
                 </div>
-                <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-400/30">
-                  Cố Định
+                <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-400/30 group-hover:bg-blue-600 group-hover:text-white transition">
+                  Đổi Logo ➔
                 </span>
               </div>
 

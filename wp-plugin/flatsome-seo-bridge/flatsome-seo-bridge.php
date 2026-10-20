@@ -643,7 +643,16 @@ class Flatsome_SEO_Bridge {
             'color_secondary' => !empty($theme_mods['color_secondary']) ? $theme_mods['color_secondary'] : '#d26e4b',
             'topbar_content' => !empty($theme_mods['topbar_left']) ? $theme_mods['topbar_left'] : (!empty($theme_mods['topbar_right']) ? $theme_mods['topbar_right'] : ''),
             'footer_block' => !empty($theme_mods['footer_block']) ? $theme_mods['footer_block'] : '',
-            'site_logo' => !empty($theme_mods['site_logo']) ? wp_get_attachment_url($theme_mods['site_logo']) : '',
+            'site_logo' => !empty($theme_mods['site_logo']) ? (is_numeric($theme_mods['site_logo']) ? wp_get_attachment_url($theme_mods['site_logo']) : $theme_mods['site_logo']) : '',
+            'site_logo_id' => !empty($theme_mods['site_logo']) && is_numeric($theme_mods['site_logo']) ? (int)$theme_mods['site_logo'] : 0,
+            'site_logo_dark' => !empty($theme_mods['site_logo_dark']) ? (is_numeric($theme_mods['site_logo_dark']) ? wp_get_attachment_url($theme_mods['site_logo_dark']) : $theme_mods['site_logo_dark']) : '',
+            'site_logo_dark_id' => !empty($theme_mods['site_logo_dark']) && is_numeric($theme_mods['site_logo_dark']) ? (int)$theme_mods['site_logo_dark'] : 0,
+            'site_logo_sticky' => !empty($theme_mods['site_logo_sticky']) ? (is_numeric($theme_mods['site_logo_sticky']) ? wp_get_attachment_url($theme_mods['site_logo_sticky']) : $theme_mods['site_logo_sticky']) : '',
+            'site_logo_sticky_id' => !empty($theme_mods['site_logo_sticky']) && is_numeric($theme_mods['site_logo_sticky']) ? (int)$theme_mods['site_logo_sticky'] : 0,
+            'logo_width' => !empty($theme_mods['logo_width']) ? (int)$theme_mods['logo_width'] : 200,
+            'logo_max_width' => !empty($theme_mods['logo_max_width']) ? $theme_mods['logo_max_width'] : '',
+            'logo_padding' => isset($theme_mods['logo_padding']) ? (int)$theme_mods['logo_padding'] : 0,
+            'logo_position' => !empty($theme_mods['logo_position']) ? $theme_mods['logo_position'] : 'left',
             'site_icon' => get_option('site_icon') ? (int)get_option('site_icon') : 0,
             'site_icon_url' => get_site_icon_url() ?: (get_option('site_icon') ? wp_get_attachment_image_url(get_option('site_icon'), 'full') : ''),
             'box_shadow' => !empty($theme_mods['box_shadow']) ? $theme_mods['box_shadow'] : false,
@@ -1160,6 +1169,44 @@ class Flatsome_SEO_Bridge {
                 update_option('site_icon', 0);
                 remove_theme_mod('site_icon');
             }
+        }
+
+        // Flatsome Site Logo Options
+        if (isset($body['site_logo'])) {
+            $logo_val = !empty($body['site_logo_id']) ? (int)$body['site_logo_id'] : sanitize_text_field($body['site_logo']);
+            if (empty($logo_val)) {
+                remove_theme_mod('site_logo');
+            } else {
+                set_theme_mod('site_logo', $logo_val);
+            }
+        }
+        if (isset($body['site_logo_dark'])) {
+            $logo_dark_val = !empty($body['site_logo_dark_id']) ? (int)$body['site_logo_dark_id'] : sanitize_text_field($body['site_logo_dark']);
+            if (empty($logo_dark_val)) {
+                remove_theme_mod('site_logo_dark');
+            } else {
+                set_theme_mod('site_logo_dark', $logo_dark_val);
+            }
+        }
+        if (isset($body['site_logo_sticky'])) {
+            $logo_sticky_val = !empty($body['site_logo_sticky_id']) ? (int)$body['site_logo_sticky_id'] : sanitize_text_field($body['site_logo_sticky']);
+            if (empty($logo_sticky_val)) {
+                remove_theme_mod('site_logo_sticky');
+            } else {
+                set_theme_mod('site_logo_sticky', $logo_sticky_val);
+            }
+        }
+        if (isset($body['logo_width'])) {
+            set_theme_mod('logo_width', (int)$body['logo_width']);
+        }
+        if (isset($body['logo_max_width'])) {
+            set_theme_mod('logo_max_width', sanitize_text_field($body['logo_max_width']));
+        }
+        if (isset($body['logo_padding'])) {
+            set_theme_mod('logo_padding', (int)$body['logo_padding']);
+        }
+        if (isset($body['logo_position'])) {
+            set_theme_mod('logo_position', sanitize_text_field($body['logo_position']));
         }
 
         // Set standard typography if provided

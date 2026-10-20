@@ -73,6 +73,18 @@ export const api = {
       header_color: themeConfig.headerColor,
       header_width: themeConfig.headerWidth || 'container',
 
+      // Flatsome Logo Options
+      site_logo: themeConfig.siteLogo ?? '',
+      site_logo_id: themeConfig.siteLogoId ?? 0,
+      site_logo_dark: themeConfig.siteLogoDark ?? '',
+      site_logo_dark_id: themeConfig.siteLogoDarkId ?? 0,
+      site_logo_sticky: themeConfig.siteLogoSticky ?? '',
+      site_logo_sticky_id: themeConfig.siteLogoStickyId ?? 0,
+      logo_width: themeConfig.logoWidth ?? 200,
+      logo_max_width: themeConfig.logoMaxWidth ?? '',
+      logo_padding: themeConfig.logoPadding ?? 0,
+      logo_position: themeConfig.logoPosition ?? 'left',
+
       // Header Bottom
       header_bottom_show: themeConfig.headerBottomShow,
       header_bottom_height: themeConfig.headerBottomHeight,

@@ -37,6 +37,15 @@ export interface WpInspectData {
     topbar_content: string;
     footer_block: string | number;
     site_logo: string;
+    site_logo_id?: number;
+    site_logo_dark?: string;
+    site_logo_dark_id?: number;
+    site_logo_sticky?: string;
+    site_logo_sticky_id?: number;
+    logo_width?: number;
+    logo_max_width?: number | string;
+    logo_padding?: number;
+    logo_position?: 'left' | 'center';
     site_icon?: number;
     site_icon_url?: string;
     layout: string;
@@ -250,6 +259,18 @@ export interface ThemeConfig {
   siteBgImageAttachment?: 'fixed' | 'scroll';
   siteBgOverlayColor?: string;
   siteBgOverlayEnable?: boolean;
+
+  // Flatsome Site Logo (Theme Mods: site_logo, site_logo_dark, site_logo_sticky, logo_width, logo_max_width, logo_padding, logo_position)
+  siteLogo?: string;
+  siteLogoId?: number;
+  siteLogoDark?: string;
+  siteLogoDarkId?: number;
+  siteLogoSticky?: string;
+  siteLogoStickyId?: number;
+  logoWidth?: number;
+  logoMaxWidth?: number | string;
+  logoPadding?: number;
+  logoPosition?: 'left' | 'center';
 
   // Favicon (Site Icon)
   siteIconId?: number;

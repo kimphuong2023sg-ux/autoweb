@@ -44,6 +44,18 @@ export const getInitialThemeConfig = (siteName?: string, primaryColor = '#0f3a61
   headerColor: 'dark',
   headerWidth: 'container',
 
+  // Flatsome Logo
+  siteLogo: '',
+  siteLogoId: 0,
+  siteLogoDark: '',
+  siteLogoDarkId: 0,
+  siteLogoSticky: '',
+  siteLogoStickyId: 0,
+  logoWidth: 200,
+  logoMaxWidth: '',
+  logoPadding: 0,
+  logoPosition: 'left',
+
   headerBottomShow: true,
   headerBottomHeight: 45,
   headerBottomBg: primaryColor,
@@ -601,6 +613,18 @@ export const App: React.FC = () => {
           headerButton2Color: (data.flatsome.header_button_2_color as any) || prev.headerButton2Color,
           headerButton2Style: (data.flatsome.header_button_2_style as any) || prev.headerButton2Style,
           headerButton2Radius: data.flatsome.header_button_2_radius || prev.headerButton2Radius,
+
+          // Đồng bộ Logo Flatsome từ website WordPress
+          siteLogo: data.flatsome.site_logo !== undefined && data.flatsome.site_logo !== '' ? data.flatsome.site_logo : prev.siteLogo,
+          siteLogoId: data.flatsome.site_logo_id !== undefined ? data.flatsome.site_logo_id : prev.siteLogoId,
+          siteLogoDark: data.flatsome.site_logo_dark || prev.siteLogoDark,
+          siteLogoDarkId: data.flatsome.site_logo_dark_id || prev.siteLogoDarkId,
+          siteLogoSticky: data.flatsome.site_logo_sticky || prev.siteLogoSticky,
+          siteLogoStickyId: data.flatsome.site_logo_sticky_id || prev.siteLogoStickyId,
+          logoWidth: data.flatsome.logo_width ? Number(data.flatsome.logo_width) : prev.logoWidth,
+          logoMaxWidth: data.flatsome.logo_max_width !== undefined ? data.flatsome.logo_max_width : prev.logoMaxWidth,
+          logoPadding: data.flatsome.logo_padding !== undefined ? Number(data.flatsome.logo_padding) : prev.logoPadding,
+          logoPosition: data.flatsome.logo_position || prev.logoPosition,
         }));
       }
 

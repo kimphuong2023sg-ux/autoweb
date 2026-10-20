@@ -638,6 +638,247 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
     }
   };
 
+  // --- FLATSOME SITE LOGO STATE & HANDLERS ---
+  const initialLogo = themeConfig.siteLogo || inspectData?.flatsome?.site_logo || '';
+  const initialDarkLogo = themeConfig.siteLogoDark || inspectData?.flatsome?.site_logo_dark || '';
+
+  const [logoPreview, setLogoPreview] = useState<string>(initialLogo);
+  const [logoDarkPreview, setLogoDarkPreview] = useState<string>(initialDarkLogo);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoDarkFile, setLogoDarkFile] = useState<File | null>(null);
+  const [isSettingLogo, setIsSettingLogo] = useState(false);
+  const [logoNotice, setLogoNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isLogoMediaOpen, setIsLogoMediaOpen] = useState(false);
+  const [logoMediaTarget, setLogoMediaTarget] = useState<'main' | 'dark'>('main');
+  const [logoPreviewBg, setLogoPreviewBg] = useState<'light' | 'dark' | 'grid'>('grid');
+  const [showDarkLogoConfig, setShowDarkLogoConfig] = useState(Boolean(initialDarkLogo));
+  const [logoUrlInput, setLogoUrlInput] = useState('');
+  const [showLogoUrlInput, setShowLogoUrlInput] = useState(false);
+
+  // Sync logo preview when inspectData updates
+  React.useEffect(() => {
+    const liveLogo = inspectData?.flatsome?.site_logo;
+    if (liveLogo && !logoFile && !themeConfig.siteLogo) {
+      setLogoPreview(liveLogo);
+    }
+    const liveDarkLogo = inspectData?.flatsome?.site_logo_dark;
+    if (liveDarkLogo && !logoDarkFile && !themeConfig.siteLogoDark) {
+      setLogoDarkPreview(liveDarkLogo);
+    }
+  }, [inspectData]);
+
+  React.useEffect(() => {
+    if (themeConfig.siteLogo) {
+      setLogoPreview(themeConfig.siteLogo);
+    }
+  }, [themeConfig.siteLogo]);
+
+  React.useEffect(() => {
+    if (themeConfig.siteLogoDark) {
+      setLogoDarkPreview(themeConfig.siteLogoDark);
+    }
+  }, [themeConfig.siteLogoDark]);
+
+  const handleSelectLogoFile = async (file: File, target: 'main' | 'dark' = 'main') => {
+    if (target === 'main') {
+      setLogoFile(file);
+    } else {
+      setLogoDarkFile(file);
+    }
+    setLogoNotice(null);
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target?.result as string;
+      if (target === 'main') {
+        setLogoPreview(base64);
+      } else {
+        setLogoDarkPreview(base64);
+      }
+
+      // Automatically upload if currentSite is connected for a smooth 1-click experience!
+      if (currentSite) {
+        try {
+          setIsSettingLogo(true);
+          const uploadRes = await api.uploadMedia(currentSite, {
+            filename: file.name,
+            fileData: base64,
+            title: `Logo - ${themeConfig.copyrightText || 'Flatsome'}`,
+            altText: `Logo ${currentSite.siteUrl}`,
+          });
+
+          if (uploadRes && uploadRes.media) {
+            const updatedConfig: ThemeConfig = {
+              ...themeConfig,
+              ...(target === 'main'
+                ? { siteLogo: uploadRes.media.url, siteLogoId: uploadRes.media.id }
+                : { siteLogoDark: uploadRes.media.url, siteLogoDarkId: uploadRes.media.id }),
+            };
+            onChangeThemeConfig(updatedConfig);
+            // Apply immediately to WordPress
+            await api.applyThemeMods(currentSite, updatedConfig);
+            setLogoNotice({
+              type: 'success',
+              text: `Đã tải lên và áp dụng ${target === 'main' ? 'Logo chính' : 'Logo nền tối'} lên WordPress thành công!`,
+            });
+            setTimeout(() => setLogoNotice(null), 6000);
+          }
+        } catch (err: any) {
+          setLogoNotice({
+            type: 'error',
+            text: err.message || 'Lỗi khi tải ảnh logo lên WordPress.',
+          });
+        } finally {
+          setIsSettingLogo(false);
+        }
+      } else {
+        onChangeThemeConfig({
+          ...themeConfig,
+          ...(target === 'main' ? { siteLogo: base64 } : { siteLogoDark: base64 }),
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleOpenLogoMediaPicker = async (target: 'main' | 'dark' = 'main') => {
+    setLogoMediaTarget(target);
+    setIsLogoMediaOpen(true);
+    if (wpMediaList.length === 0 && currentSite) {
+      try {
+        setIsLoadingMedia(true);
+        const res = await api.listMedia(currentSite);
+        if (res.media) setWpMediaList(res.media);
+      } catch (e) {
+      } finally {
+        setIsLoadingMedia(false);
+      }
+    }
+  };
+
+  const handleSelectMediaLogo = async (item: WpMediaItem) => {
+    if (!currentSite) return;
+    try {
+      setIsSettingLogo(true);
+      setLogoNotice(null);
+      setIsLogoMediaOpen(false);
+
+      const target = logoMediaTarget;
+      if (target === 'main') {
+        setLogoPreview(item.url);
+      } else {
+        setLogoDarkPreview(item.url);
+      }
+
+      const updatedConfig: ThemeConfig = {
+        ...themeConfig,
+        ...(target === 'main'
+          ? { siteLogo: item.url, siteLogoId: item.id }
+          : { siteLogoDark: item.url, siteLogoDarkId: item.id }),
+      };
+      onChangeThemeConfig(updatedConfig);
+
+      // Apply to WordPress
+      await api.applyThemeMods(currentSite, updatedConfig);
+      setLogoNotice({
+        type: 'success',
+        text: `Đã chọn ảnh #${item.id} và cài đặt làm ${target === 'main' ? 'Logo chính' : 'Logo nền tối'} thành công!`,
+      });
+      setTimeout(() => setLogoNotice(null), 6000);
+    } catch (err: any) {
+      setLogoNotice({
+        type: 'error',
+        text: err.message || 'Lỗi khi áp dụng Logo từ Media Library.',
+      });
+    } finally {
+      setIsSettingLogo(false);
+    }
+  };
+
+  const handleApplyLogoUrl = async (target: 'main' | 'dark' = 'main') => {
+    if (!logoUrlInput.trim()) return;
+    try {
+      setIsSettingLogo(true);
+      setLogoNotice(null);
+      const url = logoUrlInput.trim();
+
+      if (target === 'main') {
+        setLogoPreview(url);
+      } else {
+        setLogoDarkPreview(url);
+      }
+
+      const updatedConfig: ThemeConfig = {
+        ...themeConfig,
+        ...(target === 'main'
+          ? { siteLogo: url, siteLogoId: 0 }
+          : { siteLogoDark: url, siteLogoDarkId: 0 }),
+      };
+      onChangeThemeConfig(updatedConfig);
+
+      if (currentSite) {
+        await api.applyThemeMods(currentSite, updatedConfig);
+        setLogoNotice({
+          type: 'success',
+          text: `Đã cập nhật URL logo lên WordPress thành công!`,
+        });
+        setTimeout(() => setLogoNotice(null), 6000);
+      }
+      setLogoUrlInput('');
+      setShowLogoUrlInput(false);
+    } catch (err: any) {
+      setLogoNotice({
+        type: 'error',
+        text: err.message || 'Lỗi cập nhật URL logo',
+      });
+    } finally {
+      setIsSettingLogo(false);
+    }
+  };
+
+  const handleRemoveLogo = async (target: 'main' | 'dark' = 'main') => {
+    if (!currentSite) return;
+    const ok = window.confirm(
+      `Bạn có chắc chắn muốn gỡ bỏ ${target === 'main' ? 'Logo chính' : 'Logo nền tối'} này không?`
+    );
+    if (!ok) return;
+
+    try {
+      setIsSettingLogo(true);
+      setLogoNotice(null);
+
+      if (target === 'main') {
+        setLogoPreview('');
+        setLogoFile(null);
+      } else {
+        setLogoDarkPreview('');
+        setLogoDarkFile(null);
+      }
+
+      const updatedConfig: ThemeConfig = {
+        ...themeConfig,
+        ...(target === 'main'
+          ? { siteLogo: '', siteLogoId: 0 }
+          : { siteLogoDark: '', siteLogoDarkId: 0 }),
+      };
+      onChangeThemeConfig(updatedConfig);
+
+      await api.applyThemeMods(currentSite, updatedConfig);
+      setLogoNotice({
+        type: 'success',
+        text: `Đã gỡ bỏ ${target === 'main' ? 'Logo chính' : 'Logo nền tối'} thành công!`,
+      });
+      setTimeout(() => setLogoNotice(null), 6000);
+    } catch (err: any) {
+      setLogoNotice({
+        type: 'error',
+        text: err.message || 'Lỗi khi gỡ bỏ Logo.',
+      });
+    } finally {
+      setIsSettingLogo(false);
+    }
+  };
+
 
 
   return (
@@ -1048,6 +1289,89 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
         </div>
       )}
 
+      {/* MEDIA PICKER MODAL FOR LOGO */}
+      {isLogoMediaOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                  <FolderOpen className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">
+                    {logoMediaTarget === 'main'
+                      ? 'Chọn Logo Chính Từ Thư Viện WordPress'
+                      : 'Chọn Logo Nền Tối Từ Thư Viện WordPress'}
+                  </h3>
+                  <p className="text-[11px] text-slate-400">Nhấp vào ảnh để cài đặt làm Logo Flatsome cho website</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsLogoMediaOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm hình ảnh trong Media Library..."
+                  value={mediaSearchQuery}
+                  onChange={(e) => setMediaSearchQuery(e.target.value)}
+                  className="w-full bg-white border border-slate-200 text-xs rounded-xl pl-9 pr-3.5 py-2 outline-hidden focus:border-blue-500 transition"
+                />
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              {isLoadingMedia ? (
+                <div className="py-12 flex flex-col items-center justify-center text-slate-400 gap-2">
+                  <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                  <span className="text-xs">Đang tải thư viện ảnh từ WordPress...</span>
+                </div>
+              ) : wpMediaList.length === 0 ? (
+                <div className="py-12 text-center text-xs text-slate-400">
+                  Thư viện Media hiện chưa có ảnh nào. Vui lòng chọn tải file từ máy tính.
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  {wpMediaList
+                    .filter((m) =>
+                      !mediaSearchQuery ||
+                      (m.title && m.title.toLowerCase().includes(mediaSearchQuery.toLowerCase())) ||
+                      (m.filename && m.filename.toLowerCase().includes(mediaSearchQuery.toLowerCase()))
+                    )
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => handleSelectMediaLogo(item)}
+                        className="group rounded-xl border border-slate-200 p-2 bg-white hover:border-blue-500 hover:shadow-md transition cursor-pointer flex flex-col items-center text-center"
+                      >
+                        <div className="w-16 h-16 rounded-lg bg-slate-50 flex items-center justify-center overflow-hidden mb-1.5 border border-slate-100">
+                          <img
+                            src={item.thumb || item.url}
+                            alt={item.alt || item.title || 'Media'}
+                            className="w-full h-full object-contain group-hover:scale-105 transition"
+                          />
+                        </div>
+                        <span className="text-[10px] text-slate-700 font-medium truncate w-full group-hover:text-blue-600">
+                          {item.title || item.filename || `#${item.id}`}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ============================================================== */}
       {/* SECTION: TÙY BIẾN HEADER FLATSOME (HEADER BUILDER & PRESETS)   */}
       {/* ============================================================== */}
@@ -1267,7 +1591,9 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
               onApplyTheme={handleQuickApplyTheme}
               isApplying={isApplying}
               onOpenElementSettings={(elId) => {
-                if (elId === 'button-1' || elId === 'button-2') {
+                if (elId === 'logo') {
+                  setActiveHeaderTab('main');
+                } else if (elId === 'button-1' || elId === 'button-2') {
                   setActiveHeaderTab('buttons');
                 } else if (elId.startsWith('html') || elId.startsWith('block') || elId === 'contact') {
                   setActiveHeaderTab('elements');
@@ -1287,6 +1613,413 @@ export const Step2ThemeCustomizer: React.FC<Step2ThemeCustomizerProps> = ({
                 <p className="text-[11px] text-slate-500 mt-0.5">
                   Thanh chứa Logo, ô tìm kiếm hoặc các nút CTA bên phải.
                 </p>
+              </div>
+
+              {/* Notification Banner for Logo */}
+              {logoNotice && (
+                <div
+                  className={`p-3 rounded-xl text-xs flex items-center justify-between animate-in fade-in duration-200 ${
+                    logoNotice.type === 'success'
+                      ? 'bg-emerald-50 border border-emerald-200 text-emerald-900 font-medium'
+                      : 'bg-red-50 border border-red-200 text-red-900'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {logoNotice.type === 'success' ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    ) : (
+                      <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                    )}
+                    <span>{logoNotice.text}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLogoNotice(null)}
+                    className="text-xs text-slate-400 hover:text-slate-600 ml-2 cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
+              {/* LOGO & BRAND IDENTITY CARD */}
+              <div className="p-4 bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50 border border-blue-200/80 rounded-2xl shadow-xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-blue-100/80 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-blue-600 text-white rounded-xl shadow-xs">
+                      <ImageIcon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-900 uppercase tracking-wide">
+                          Logo Website &amp; Nhận Diện Thương Hiệu
+                        </span>
+                        {themeConfig.siteLogo ? (
+                          <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1 font-mono">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Đã Cài Logo Riêng
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 font-mono">
+                            <AlertTriangle className="w-3 h-3 text-amber-600" /> Đang Dùng Logo Flatsome Mặc Định
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Tải logo thương hiệu của bạn lên để hiển thị trên thanh Header chính và thay thế logo mặc định của Flatsome.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Preview Background Switcher */}
+                  <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-slate-200 shadow-2xs self-start sm:self-auto">
+                    <span className="text-[10px] text-slate-400 px-1 font-medium">Nền xem trước:</span>
+                    <button
+                      type="button"
+                      onClick={() => setLogoPreviewBg('grid')}
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold transition cursor-pointer ${
+                        logoPreviewBg === 'grid' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                      title="Nền caro trong suốt"
+                    >
+                      Caro
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLogoPreviewBg('light')}
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold transition cursor-pointer ${
+                        logoPreviewBg === 'light' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                      title="Nền trắng sáng"
+                    >
+                      Sáng
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLogoPreviewBg('dark')}
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold transition cursor-pointer ${
+                        logoPreviewBg === 'dark' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                      title="Nền tối"
+                    >
+                      Tối
+                    </button>
+                  </div>
+                </div>
+
+                {/* Live Logo Preview Box */}
+                <div
+                  className={`rounded-xl border p-4 flex flex-col items-center justify-center min-h-[110px] transition relative overflow-hidden ${
+                    logoPreviewBg === 'dark'
+                      ? 'bg-slate-900 border-slate-800'
+                      : logoPreviewBg === 'light'
+                      ? 'bg-white border-slate-200'
+                      : 'bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:12px_12px] bg-slate-50 border-slate-200'
+                  }`}
+                >
+                  {logoPreview ? (
+                    <div
+                      className="flex items-center justify-center transition-all duration-200"
+                      style={{
+                        width: `${themeConfig.logoWidth || 200}px`,
+                        maxWidth: themeConfig.logoMaxWidth ? `${themeConfig.logoMaxWidth}px` : '100%',
+                        padding: `${themeConfig.logoPadding || 0}px`,
+                      }}
+                    >
+                      <img
+                        src={logoPreview}
+                        alt="Logo Website"
+                        className="max-h-20 w-auto object-contain drop-shadow-xs"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-center p-3">
+                      <div className="flex items-center gap-2 mb-1.5 opacity-75">
+                        <div className="w-8 h-8 rounded-lg bg-slate-800 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                          FL
+                        </div>
+                        <span className="font-extrabold tracking-widest text-slate-800 text-sm">FLATSOME</span>
+                      </div>
+                      <span className="text-[11px] text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200 font-medium">
+                        Website đang hiển thị Logo FLATSOME mặc định (như trong ảnh bạn chụp). Hãy tải logo mới lên!
+                      </span>
+                    </div>
+                  )}
+
+                  <span className="absolute bottom-1 right-2 text-[9px] font-mono text-slate-400">
+                    Khung Logo: {themeConfig.logoWidth || 200}px | Đệm: {themeConfig.logoPadding || 0}px
+                  </span>
+                </div>
+
+                {/* Upload & Choose Action Toolbar */}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {/* Direct upload from computer */}
+                  <label className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50">
+                    {isSettingLogo ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <UploadCloud className="w-4 h-4" />
+                    )}
+                    <span>{isSettingLogo ? 'Đang Tải Lên...' : 'Tải File Logo Lên (Từ Máy)'}</span>
+                    <input
+                      type="file"
+                      accept="image/png, image/svg+xml, image/webp, image/jpeg, image/jpg"
+                      className="hidden"
+                      disabled={isSettingLogo}
+                      onClick={(e) => {
+                        (e.target as HTMLInputElement).value = '';
+                      }}
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          handleSelectLogoFile(e.target.files[0], 'main');
+                        }
+                      }}
+                    />
+                  </label>
+
+                  {/* Choose from WP Media Library */}
+                  <button
+                    type="button"
+                    disabled={isSettingLogo}
+                    onClick={() => handleOpenLogoMediaPicker('main')}
+                    className="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <FolderOpen className="w-4 h-4 text-indigo-600" />
+                    <span>Chọn Từ Media WP</span>
+                  </button>
+
+                  {/* Direct URL toggle */}
+                  <button
+                    type="button"
+                    disabled={isSettingLogo}
+                    onClick={() => setShowLogoUrlInput(!showLogoUrlInput)}
+                    className={`px-3 py-2 bg-white hover:bg-slate-100 border rounded-xl text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
+                      showLogoUrlInput ? 'border-blue-500 text-blue-700' : 'border-slate-300 text-slate-700'
+                    }`}
+                  >
+                    <Globe className="w-4 h-4 text-cyan-600" />
+                    <span>Dán Link URL Ảnh</span>
+                  </button>
+
+                  {/* Remove logo */}
+                  {(themeConfig.siteLogo || logoPreview) && (
+                    <button
+                      type="button"
+                      disabled={isSettingLogo}
+                      onClick={() => handleRemoveLogo('main')}
+                      className="px-3 py-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-xl text-xs font-semibold transition flex items-center gap-1 cursor-pointer disabled:opacity-50 ml-auto"
+                      title="Gỡ bỏ Logo tùy chỉnh và khôi phục về logo gốc"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Gỡ Logo</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Direct Image URL input box */}
+                {showLogoUrlInput && (
+                  <div className="p-3 bg-white border border-slate-200 rounded-xl flex items-center gap-2 animate-in fade-in duration-150">
+                    <input
+                      type="url"
+                      placeholder="https://domain.com/wp-content/uploads/logo.png"
+                      value={logoUrlInput}
+                      onChange={(e) => setLogoUrlInput(e.target.value)}
+                      className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs outline-hidden focus:border-blue-500"
+                    />
+                    <button
+                      type="button"
+                      disabled={!logoUrlInput.trim() || isSettingLogo}
+                      onClick={() => handleApplyLogoUrl('main')}
+                      className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                    >
+                      Áp Dụng
+                    </button>
+                  </div>
+                )}
+
+                {/* Logo Dimensions & Layout Controls */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-blue-100/80">
+                  {/* Logo Width */}
+                  <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1.5 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-slate-700">Độ Rộng Khung Logo</label>
+                      <span className="text-[11px] font-mono font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                        {themeConfig.logoWidth || 200}px
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="50"
+                      max="450"
+                      step="5"
+                      value={themeConfig.logoWidth || 200}
+                      onChange={(e) =>
+                        onChangeThemeConfig({ ...themeConfig, logoWidth: parseInt(e.target.value, 10) })
+                      }
+                      className="w-full cursor-pointer accent-blue-600"
+                    />
+                    <div className="flex justify-between text-[9px] text-slate-400">
+                      <span>100px</span>
+                      <span>200px (Chuẩn)</span>
+                      <span>400px</span>
+                    </div>
+                  </div>
+
+                  {/* Logo Max Width */}
+                  <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1.5 shadow-2xs">
+                    <label className="text-[11px] font-bold text-slate-700 block">Độ Rộng Tối Đa (Max Width)</label>
+                    <input
+                      type="text"
+                      placeholder="Auto (hoặc px: 180)"
+                      value={themeConfig.logoMaxWidth || ''}
+                      onChange={(e) =>
+                        onChangeThemeConfig({ ...themeConfig, logoMaxWidth: e.target.value })
+                      }
+                      className="w-full bg-slate-50 border border-slate-200 text-xs rounded-lg px-2.5 py-1.5 outline-hidden focus:border-blue-500 font-mono"
+                    />
+                    <span className="text-[9px] text-slate-400 block">Để trống để tự động fit khung</span>
+                  </div>
+
+                  {/* Logo Padding */}
+                  <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1.5 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-slate-700">Khoảng Đệm Logo (Padding)</label>
+                      <span className="text-[11px] font-mono font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                        {themeConfig.logoPadding || 0}px
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="30"
+                      step="1"
+                      value={themeConfig.logoPadding || 0}
+                      onChange={(e) =>
+                        onChangeThemeConfig({ ...themeConfig, logoPadding: parseInt(e.target.value, 10) })
+                      }
+                      className="w-full cursor-pointer accent-blue-600"
+                    />
+                    <div className="flex justify-between text-[9px] text-slate-400">
+                      <span>0px</span>
+                      <span>15px</span>
+                      <span>30px</span>
+                    </div>
+                  </div>
+
+                  {/* Logo Position */}
+                  <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1.5 shadow-2xs">
+                    <label className="text-[11px] font-bold text-slate-700 block">Vị Trí Logo Trên Header</label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => onChangeThemeConfig({ ...themeConfig, logoPosition: 'left' })}
+                        className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition cursor-pointer border ${
+                          (themeConfig.logoPosition || 'left') === 'left'
+                            ? 'bg-blue-50 border-blue-500 text-blue-700'
+                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        Căn Trái
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onChangeThemeConfig({ ...themeConfig, logoPosition: 'center' })}
+                        className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition cursor-pointer border ${
+                          themeConfig.logoPosition === 'center'
+                            ? 'bg-blue-50 border-blue-500 text-blue-700'
+                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        Căn Giữa
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Alternative Logo for Dark / Transparent Header */}
+                <div className="pt-2 border-t border-blue-100/80">
+                  <div
+                    onClick={() => setShowDarkLogoConfig(!showDarkLogoConfig)}
+                    className="flex items-center justify-between cursor-pointer py-1 text-xs font-bold text-slate-700 hover:text-blue-600 transition"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Moon className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Logo Bản Sáng Dành Cho Nền Tối / Trong Suốt (site_logo_dark - Tùy chọn)</span>
+                    </span>
+                    <span className="text-slate-400 font-normal text-[11px]">
+                      {showDarkLogoConfig ? '▲ Thu gọn' : '▼ Mở rộng cài đặt'}
+                    </span>
+                  </div>
+
+                  {showDarkLogoConfig && (
+                    <div className="mt-3 p-3.5 bg-slate-900 text-white rounded-xl border border-slate-800 space-y-3 animate-in fade-in duration-150">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span className="text-xs font-bold text-slate-200 block">Logo Phiên Bản Trắng / Sáng</span>
+                          <p className="text-[11px] text-slate-400 mt-0.5">
+                            Flatsome sẽ tự động hiển thị logo này khi Header chuyển sang nền màu tối hoặc hiệu ứng trong suốt.
+                          </p>
+                        </div>
+                        {themeConfig.siteLogoDark && (
+                          <span className="text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full shrink-0">
+                            Đã cài đặt
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        <div className="w-40 h-16 bg-slate-950 border border-slate-800 rounded-lg p-2 flex items-center justify-center overflow-hidden">
+                          {logoDarkPreview ? (
+                            <img src={logoDarkPreview} alt="Logo Dark" className="max-h-full max-w-full object-contain" />
+                          ) : (
+                            <span className="text-[10px] text-slate-500 italic">Chưa chọn ảnh</span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          <label className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                            <UploadCloud className="w-3.5 h-3.5" />
+                            <span>Tải File Logo Trắng</span>
+                            <input
+                              type="file"
+                              accept="image/png, image/svg+xml, image/webp, image/jpeg, image/jpg"
+                              className="hidden"
+                              disabled={isSettingLogo}
+                              onClick={(e) => {
+                                (e.target as HTMLInputElement).value = '';
+                              }}
+                              onChange={(e) => {
+                                if (e.target.files?.[0]) {
+                                  handleSelectLogoFile(e.target.files[0], 'dark');
+                                }
+                              }}
+                            />
+                          </label>
+
+                          <button
+                            type="button"
+                            disabled={isSettingLogo}
+                            onClick={() => handleOpenLogoMediaPicker('dark')}
+                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                          >
+                            <FolderOpen className="w-3.5 h-3.5 text-indigo-400" />
+                            <span>Chọn Từ Media</span>
+                          </button>
+
+                          {themeConfig.siteLogoDark && (
+                            <button
+                              type="button"
+                              disabled={isSettingLogo}
+                              onClick={() => handleRemoveLogo('dark')}
+                              className="px-2.5 py-1.5 bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-800/60 rounded-lg text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+                            >
+                              Gỡ
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
