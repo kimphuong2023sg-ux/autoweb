@@ -339,8 +339,64 @@ export class BridgeService {
 
   async saveSubpageStyling(siteUrl: string, auth: AuthParams, styling: any) {
     try {
+      const boldColor = styling.boldColor || (styling.themeMode === 'light' ? '#0f172a' : '#fde047');
+      const pageBg = styling.pageBgColor || 'transparent';
+
+      let baseCustomCss = (styling.customCss || '').replace(
+        /\/\* Flatsome AutoTheme: Subpage Background & Bold Color Override \*\/[\s\S]*?\/\* End Subpage Override \*\//g,
+        ''
+      ).trim();
+
+      const compatCss = `
+/* Flatsome AutoTheme: Subpage Background & Bold Color Override */
+#main #content strong,
+#main #content b,
+#main .col-inner strong,
+#main .col-inner b,
+#main .entry-content strong,
+#main .entry-content b,
+#main .post-content strong,
+#main .post-content b,
+#main article strong,
+#main article b {
+  color: ${boldColor} !important;
+  font-weight: 700 !important;
+}
+#main #content p a strong,
+#main #content p a b,
+#main #content li a strong,
+#main #content li a b,
+#main .entry-content a strong,
+#main .entry-content a b {
+  color: inherit !important;
+}
+body:not(.home) #main,
+body:not(.home) #content,
+body:not(.home) .page-wrapper,
+body:not(.home) .article-inner,
+body:not(.home) .page-inner,
+body:not(.home) .entry-content,
+body.single-post #main,
+body.single-post #content,
+body.single-post .article-inner,
+body.page:not(.home) #main,
+body.page:not(.home) #content,
+body.page:not(.home) .page-wrapper,
+body.archive #main,
+body.archive #content {
+  background-color: ${pageBg} !important;
+}
+/* End Subpage Override */`;
+
+      const enrichedStyling = {
+        ...styling,
+        boldColor,
+        pageBgColor: pageBg,
+        customCss: baseCustomCss ? `${baseCustomCss}\n${compatCss}` : compatCss,
+      };
+
       const client = this.getClient(siteUrl, auth);
-      const res = await client.post('/save-subpage-styling', { styling });
+      const res = await client.post('/save-subpage-styling', { styling: enrichedStyling });
       return res.data;
     } catch (err: any) {
       this.handleError(err, 'Lỗi khi lưu cấu hình style trang con lên WordPress.');
