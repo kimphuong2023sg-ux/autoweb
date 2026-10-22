@@ -143,9 +143,9 @@ export const SiteConnectModal: React.FC<SiteConnectModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
               <Globe className="w-4 h-4" />
@@ -168,11 +168,33 @@ export const SiteConnectModal: React.FC<SiteConnectModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-xs p-3 rounded-lg flex items-start gap-2">
-              <span className="shrink-0 font-bold">⚠️</span>
-              <span className="leading-relaxed">{error}</span>
+            <div className="bg-red-50 border border-red-200 text-red-700 text-xs p-3.5 rounded-xl space-y-2">
+              <div className="flex items-start gap-2">
+                <span className="shrink-0 font-bold text-sm">⚠️</span>
+                <span className="leading-relaxed font-medium">{error}</span>
+              </div>
+              {!useTokenMode && onAutoInstall && (
+                <button
+                  type="button"
+                  onClick={handleAutoInstall}
+                  disabled={isLoading || isAutoInstalling}
+                  className="w-full mt-2 py-2 px-3 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg text-xs font-bold shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {isAutoInstalling ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Đang cài đặt & kích hoạt plugin lên website...</span>
+                    </>
+                  ) : (
+                    <>
+                      <UploadCloud className="w-3.5 h-3.5" />
+                      <span>🚀 Bấm Vào Đây Để Cài Đặt & Kích Hoạt Tự Động Ngay</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           )}
 

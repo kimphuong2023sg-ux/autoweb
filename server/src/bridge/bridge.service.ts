@@ -16,11 +16,15 @@ export class BridgeService {
 
   private getClient(siteUrl: string, auth: AuthParams) {
     let cleanUrl = siteUrl.trim();
+    if (!/^https?:\/\//i.test(cleanUrl)) {
+      cleanUrl = 'https://' + cleanUrl;
+    }
     cleanUrl = cleanUrl.replace(/\/wp-admin(\/.*)?$/i, '');
     cleanUrl = cleanUrl.replace(/\/wp-login\.php.*$/i, '');
     cleanUrl = cleanUrl.replace(/\/+$/, '');
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
     };
 
     if (auth.username && auth.password) {
@@ -32,11 +36,55 @@ export class BridgeService {
       headers['X-Bridge-Token'] = auth.token;
     }
 
-    return axios.create({
+    const instance = axios.create({
       baseURL: `${cleanUrl}/wp-json/flatsome-bridge/v1`,
       headers,
       timeout: 25000,
     });
+
+    // Tự động fallback sang ?rest_route= nếu website chưa bật Permalinks (Đường dẫn tĩnh) hoặc Nginx chưa cấu hình /wp-json/
+    instance.interceptors.response.use(
+      async (response) => {
+        if (typeof response.data === 'string' && response.data.trim().startsWith('<!DOCTYPE') && response.config && !(response.config as any)._isRetry) {
+          const originalUrl = response.config.url || '';
+          const cleanPath = originalUrl.startsWith('/') ? originalUrl : `/${originalUrl}`;
+          const fallbackUrl = `${cleanUrl}/index.php?rest_route=/flatsome-bridge/v1${cleanPath}`;
+          try {
+            const fallbackRes = await axios({
+              ...response.config,
+              url: fallbackUrl,
+              baseURL: '',
+              _isRetry: true,
+            } as any);
+            if (fallbackRes.data && typeof fallbackRes.data === 'object') {
+              return fallbackRes;
+            }
+          } catch (e) {}
+        }
+        return response;
+      },
+      async (error) => {
+        if (error.config && !(error.config as any)._isRetry) {
+          const originalUrl = error.config.url || '';
+          const cleanPath = originalUrl.startsWith('/') ? originalUrl : `/${originalUrl}`;
+          const fallbackUrl = `${cleanUrl}/index.php?rest_route=/flatsome-bridge/v1${cleanPath}`;
+          try {
+            const fallbackRes = await axios({
+              ...error.config,
+              url: fallbackUrl,
+              baseURL: '',
+              _isRetry: true,
+            } as any);
+            if (fallbackRes.data && typeof fallbackRes.data === 'object') {
+              return fallbackRes;
+            }
+          } catch (e) {}
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return instance;
   }
 
   async syncSite(siteUrl: string, auth: AuthParams) {
@@ -46,9 +94,13 @@ export class BridgeService {
       const inspectData = res.data;
 
       if (!inspectData || typeof inspectData !== 'object' || typeof inspectData === 'string' || inspectData.success === false) {
+        let hint = '';
+        if (typeof inspectData === 'string' && inspectData.includes('<!DOCTYPE html')) {
+          hint = ' Website này chưa được cài đặt hoặc chưa kích hoạt Plugin "Flatsome SEO Bridge". Vui lòng bấm nút "🚀 Tự Động Cài & Kích Hoạt Plugin Lên WP" ở bên dưới hoặc tải file zip lên WordPress trước!';
+        }
         throw new Error(
           (inspectData && inspectData.message) ||
-          'Website phản hồi dữ liệu không hợp lệ (không phải JSON từ Flatsome SEO Bridge). Vui lòng kiểm tra lại URL hoặc cài lại Plugin!'
+          (hint ? hint.trim() : 'Website phản hồi dữ liệu không hợp lệ (không phải JSON từ Flatsome SEO Bridge). Vui lòng kiểm tra lại URL hoặc cài lại Plugin!')
         );
       }
 
@@ -917,15 +969,19 @@ export class BridgeService {
       try {
         const pluginFolderCandidates = [
           path.resolve(process.cwd(), '../wp-plugin/flatsome-seo-bridge'),
+          path.resolve(process.cwd(), '../wp-plugin/flatsome-seo-bridge'),
           path.resolve(process.cwd(), 'wp-plugin/flatsome-seo-bridge'),
-          'c:\\Project\\seo\\toolautothemewp\\wp-plugin\\flatsome-seo-bridge',
         ];
         const pluginFolder = pluginFolderCandidates.find((p) => fs.existsSync(p));
         if (pluginFolder) {
           const zip = new AdmZip();
-          zip.addLocalFolder(pluginFolder, 'flatsome-seo-bridge');
-          // Chuẩn hóa tất cả dấu gạch chéo sang '/' chuẩn Linux
-          zip.getEntries().forEach((entry) => {
+          const mainPhp = path.join(pluginFolder, 'flatsome-seo-bridge.php');
+          if (fs.existsSync(mainPhp)) {
+            zip.addFile('flatsome-seo-bridge/flatsome-seo-bridge.php', fs.readFileSync(mainPhp));
+          } else {
+            zip.addLocalFolder(pluginFolder, 'flatsome-seo-bridge');
+          }
+          zip.getEntries().forEach((entry: any) => {
             entry.entryName = entry.entryName.replace(/\\/g, '/');
           });
           zipBuffer = zip.toBuffer();
@@ -934,9 +990,8 @@ export class BridgeService {
           const targets = [
             path.resolve(process.cwd(), '../wp-plugin/flatsome-seo-bridge.zip'),
             path.resolve(process.cwd(), 'wp-plugin/flatsome-seo-bridge.zip'),
-            'c:\\Project\\seo\\toolautothemewp\\wp-plugin\\flatsome-seo-bridge.zip',
-            'c:\\Project\\seo\\toolautothemewp\\client\\public\\wp-bridge-plugin\\flatsome-seo-bridge.zip',
-            'c:\\Project\\seo\\toolautothemewp\\client\\dist\\wp-bridge-plugin\\flatsome-seo-bridge.zip',
+            path.resolve(process.cwd(), '../client/public/wp-bridge-plugin/flatsome-seo-bridge.zip'),
+            path.resolve(process.cwd(), '../client/dist/wp-bridge-plugin/flatsome-seo-bridge.zip'),
           ];
           for (const t of targets) {
             try {
@@ -949,12 +1004,11 @@ export class BridgeService {
           const possibleZipPaths = [
             path.resolve(process.cwd(), '../wp-plugin/flatsome-seo-bridge.zip'),
             path.resolve(process.cwd(), 'wp-plugin/flatsome-seo-bridge.zip'),
-            'c:\\Project\\seo\\toolautothemewp\\wp-plugin\\flatsome-seo-bridge.zip',
           ];
           const foundZip = possibleZipPaths.find((p) => fs.existsSync(p));
           if (!foundZip) throw new Error('Không tìm thấy file flatsome-seo-bridge.zip');
           const zip = new AdmZip(foundZip);
-          zip.getEntries().forEach((entry) => {
+          zip.getEntries().forEach((entry: any) => {
             entry.entryName = entry.entryName.replace(/\\/g, '/');
           });
           zipBuffer = zip.toBuffer();
@@ -963,12 +1017,11 @@ export class BridgeService {
         const possibleZipPaths = [
           path.resolve(process.cwd(), '../wp-plugin/flatsome-seo-bridge.zip'),
           path.resolve(process.cwd(), 'wp-plugin/flatsome-seo-bridge.zip'),
-          'c:\\Project\\seo\\toolautothemewp\\wp-plugin\\flatsome-seo-bridge.zip',
         ];
         const foundZip = possibleZipPaths.find((p) => fs.existsSync(p));
         if (!foundZip) throw new Error('Không tìm thấy file flatsome-seo-bridge.zip');
         const zip = new AdmZip(foundZip);
-        zip.getEntries().forEach((entry) => {
+        zip.getEntries().forEach((entry: any) => {
           entry.entryName = entry.entryName.replace(/\\/g, '/');
         });
         zipBuffer = zip.toBuffer();
@@ -1113,7 +1166,7 @@ export class BridgeService {
       }
 
       // 7. Đồng bộ kiểm tra trạng thái ngay lập tức
-      const inspectData = await this.syncSite(siteUrl, auth);
+      const inspectData = await this.syncSite(cleanUrl, auth);
 
       return {
         success: true,

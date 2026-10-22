@@ -309,7 +309,7 @@ class Flatsome_SEO_Bridge {
         }
     }
 
-    public function activate() {
+    public static function activate() {
         if (!get_option(self::OPTION_TOKEN)) {
             update_option(self::OPTION_TOKEN, wp_generate_password(32, false));
         }
@@ -4267,6 +4267,7 @@ a[data-open='#main-menu'] {
         }
 
         $text_color = !empty($styling['textColor']) ? $styling['textColor'] : '#cbd5e1';
+        $bold_color = !empty($styling['boldColor']) ? $styling['boldColor'] : (!empty($styling['themeMode']) && $styling['themeMode'] === 'light' ? '#0f172a' : '#fde047');
         $h1_color = !empty($styling['heading1Color']) ? $styling['heading1Color'] : '#ffffff';
         $h2_color = !empty($styling['heading2Color']) ? $styling['heading2Color'] : '#38bdf8';
         $h3_color = !empty($styling['heading3Color']) ? $styling['heading3Color'] : '#fde047';
@@ -4413,6 +4414,32 @@ a.button,
   }
 }
 
+/* Flatsome AutoTheme: Subpage Background & Content Max Width */
+body:not(.home) #main,
+body:not(.home) #content,
+body:not(.home) .page-wrapper,
+body:not(.home) .article-inner,
+body:not(.home) .page-inner,
+body:not(.home) .entry-content,
+body.single-post #main,
+body.single-post #content,
+body.single-post .article-inner,
+body.page:not(.home) #main,
+body.page:not(.home) #content,
+body.page:not(.home) .page-wrapper,
+body.archive #main,
+body.archive #content {
+  background-color: {$page_bg} !important;
+}
+
+body:not(.home) #content.page-wrapper .row-main,
+body:not(.home) .blog-wrapper .row-large,
+body:not(.home) .content-area {
+  max-width: {$max_width} !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
 /* Flatsome AutoTheme: Subpage & Content Typography - Scoped strictly to #main #content */
 #main #content,
 #main .content-area,
@@ -4437,11 +4464,28 @@ a.button,
   line-height: {$line_height} !important;
 }
 
+/* Flatsome AutoTheme: Bold Text Styling (strong, b) */
 #main #content strong,
+#main #content b,
 #main .col-inner strong,
-#main .entry-content strong {
-  color: #ffffff !important;
+#main .col-inner b,
+#main .entry-content strong,
+#main .entry-content b,
+#main .post-content strong,
+#main .post-content b,
+#main article strong,
+#main article b {
+  color: {$bold_color} !important;
   font-weight: 700 !important;
+}
+
+#main #content p a strong,
+#main #content p a b,
+#main #content li a strong,
+#main #content li a b,
+#main .entry-content a strong,
+#main .entry-content a b {
+  color: inherit !important;
 }
 
 /* Headings H1, H2, H3, H4 inside #main */
@@ -5862,6 +5906,9 @@ footer.entry-meta, .entry-footer .entry-meta, .blog-single footer.entry-meta {
                '</div>' . "\n";
     }
 }
+
+// Đăng ký hook kích hoạt ở scope toàn cục (chuẩn WordPress)
+register_activation_hook(__FILE__, array('Flatsome_SEO_Bridge', 'activate'));
 
 // Khởi chạy plugin
 add_action('plugins_loaded', array('Flatsome_SEO_Bridge', 'get_instance'));

@@ -398,6 +398,7 @@ export interface SubpageStylingConfig {
   // Global Typography & Colors
   themeMode: 'dark' | 'light' | 'auto';
   textColor: string;          // Màu chữ nội dung (Paragraph)
+  boldColor?: string;         // Màu chữ in đậm (strong, b)
   heading1Color: string;      // Màu tiêu đề H1
   heading2Color: string;      // Màu tiêu đề H2
   heading3Color: string;      // Màu tiêu đề H3
@@ -496,6 +497,7 @@ export interface SubpageStylingConfig {
 export const getInitialSubpageStyling = (): SubpageStylingConfig => ({
   themeMode: 'dark',
   textColor: '#cbd5e1',
+  boldColor: '#fde047',
   heading1Color: '#ffffff',
   heading2Color: '#38bdf8',
   heading3Color: '#fde047',

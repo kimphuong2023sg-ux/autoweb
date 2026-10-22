@@ -207,11 +207,13 @@ export const StepSubpageStyling: React.FC<StepSubpageStylingProps> = ({
         ...styling,
         themeMode: 'dark',
         textColor: '#cbd5e1',
+        boldColor: '#fde047',
         heading1Color: '#ffffff',
         heading2Color: '#38bdf8',
         heading3Color: '#fde047',
         linkColor: '#38bdf8',
         linkHoverColor: '#fde047',
+        pageBgColor: 'transparent',
         contentFontSize: '16px',
         contentLineHeight: '1.75',
         tocBgColor: '#090d16',
@@ -230,11 +232,13 @@ export const StepSubpageStyling: React.FC<StepSubpageStylingProps> = ({
         ...styling,
         themeMode: 'dark',
         textColor: '#e2e8f0',
+        boldColor: '#00f2fe',
         heading1Color: '#ffffff',
         heading2Color: '#00f2fe',
         heading3Color: '#4facfe',
         linkColor: '#00f2fe',
         linkHoverColor: '#ffffff',
+        pageBgColor: 'transparent',
         contentFontSize: '16px',
         contentLineHeight: '1.75',
         tocBgColor: '#0b132b',
@@ -253,11 +257,13 @@ export const StepSubpageStyling: React.FC<StepSubpageStylingProps> = ({
         ...styling,
         themeMode: 'light',
         textColor: '#334155',
+        boldColor: '#0f172a',
         heading1Color: '#0f172a',
         heading2Color: '#1e40af',
         heading3Color: '#b45309',
         linkColor: '#2563eb',
         linkHoverColor: '#1d4ed8',
+        pageBgColor: '#ffffff',
         contentFontSize: '16px',
         contentLineHeight: '1.75',
         tocBgColor: '#f8fafc',
@@ -444,7 +450,7 @@ export const StepSubpageStyling: React.FC<StepSubpageStylingProps> = ({
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* H1 Color */}
             <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
               <div className="flex items-center justify-between">
@@ -511,6 +517,69 @@ export const StepSubpageStyling: React.FC<StepSubpageStylingProps> = ({
               </div>
             </div>
 
+            {/* Bold Text Color (strong, b) */}
+            <div className="p-3.5 bg-slate-50 border-2 border-amber-300/80 rounded-xl space-y-2 relative shadow-xs">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded bg-amber-500 text-white font-extrabold flex items-center justify-center text-[10px]">B</span>
+                  <span>Chữ In Đậm (&lt;strong&gt;, &lt;b&gt;)</span>
+                </label>
+                <div
+                  className="w-5 h-5 rounded-md border border-slate-300 shadow-inner"
+                  style={{ backgroundColor: styling.boldColor || (styling.themeMode === 'light' ? '#0f172a' : '#fde047') }}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={styling.boldColor || (styling.themeMode === 'light' ? '#0f172a' : '#fde047')}
+                  onChange={(e) => onChangeStyling({ ...styling, boldColor: e.target.value })}
+                  className="w-8 h-8 rounded border border-slate-300 cursor-pointer p-0 bg-transparent"
+                />
+                <input
+                  type="text"
+                  value={styling.boldColor || (styling.themeMode === 'light' ? '#0f172a' : '#fde047')}
+                  onChange={(e) => onChangeStyling({ ...styling, boldColor: e.target.value })}
+                  className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-mono font-medium text-slate-800"
+                  placeholder="#fde047"
+                />
+              </div>
+              <div className="flex items-center gap-1 pt-0.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => onChangeStyling({ ...styling, boldColor: '#fde047' })}
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 hover:bg-amber-200 text-amber-900 font-semibold cursor-pointer transition"
+                  title="Vàng Gold Hoàng Gia"
+                >
+                  Gold
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChangeStyling({ ...styling, boldColor: '#ffffff' })}
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold cursor-pointer transition"
+                  title="Trắng Sáng"
+                >
+                  Trắng
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChangeStyling({ ...styling, boldColor: '#38bdf8' })}
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-sky-100 hover:bg-sky-200 text-sky-900 font-semibold cursor-pointer transition"
+                  title="Xanh Cyan Neon"
+                >
+                  Cyan
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChangeStyling({ ...styling, boldColor: '#0f172a' })}
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-900 text-white font-semibold cursor-pointer transition"
+                  title="Đen Đậm"
+                >
+                  Đen
+                </button>
+              </div>
+            </div>
+
             {/* Paragraph Text Color */}
             <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
               <div className="flex items-center justify-between">
@@ -574,6 +643,83 @@ export const StepSubpageStyling: React.FC<StepSubpageStylingProps> = ({
                   onChange={(e) => onChangeStyling({ ...styling, linkHoverColor: e.target.value })}
                   className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-mono font-medium text-slate-800"
                 />
+              </div>
+            </div>
+
+            {/* Subpage Background Color */}
+            <div className="p-3.5 bg-slate-50 border-2 border-indigo-300/80 rounded-xl space-y-2 relative shadow-xs">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded bg-indigo-600 text-white font-extrabold flex items-center justify-center text-[10px]">BG</span>
+                  <span>Màu Nền Trang Con / Bài Viết</span>
+                </label>
+                <div
+                  className="w-5 h-5 rounded-md border border-slate-300 shadow-inner flex items-center justify-center overflow-hidden"
+                  style={{
+                    backgroundColor:
+                      styling.pageBgColor && styling.pageBgColor !== 'transparent'
+                        ? styling.pageBgColor
+                        : '#ffffff',
+                    backgroundImage:
+                      !styling.pageBgColor || styling.pageBgColor === 'transparent'
+                        ? 'repeating-linear-gradient(45deg, #cbd5e1 0, #cbd5e1 2px, #f8fafc 0, #f8fafc 6px)'
+                        : 'none',
+                  }}
+                  title={!styling.pageBgColor || styling.pageBgColor === 'transparent' ? 'Trong suốt (theo Nền Web)' : styling.pageBgColor}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={styling.pageBgColor && styling.pageBgColor !== 'transparent' ? styling.pageBgColor : '#0b0f19'}
+                  onChange={(e) => onChangeStyling({ ...styling, pageBgColor: e.target.value })}
+                  className="w-8 h-8 rounded border border-slate-300 cursor-pointer p-0 bg-transparent"
+                />
+                <input
+                  type="text"
+                  value={styling.pageBgColor ?? 'transparent'}
+                  onChange={(e) => onChangeStyling({ ...styling, pageBgColor: e.target.value })}
+                  className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-mono font-medium text-slate-800"
+                  placeholder="transparent hoặc #0b0f19"
+                />
+              </div>
+              <div className="flex items-center gap-1 pt-0.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => onChangeStyling({ ...styling, pageBgColor: 'transparent' })}
+                  className={`text-[10px] px-1.5 py-0.5 rounded font-semibold cursor-pointer transition ${
+                    !styling.pageBgColor || styling.pageBgColor === 'transparent'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
+                  }`}
+                  title="Trong suốt (Theo nền Website Bước 4)"
+                >
+                  Trong Suốt
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChangeStyling({ ...styling, pageBgColor: '#0b0f19' })}
+                  className={`text-[10px] px-1.5 py-0.5 rounded font-semibold cursor-pointer transition ${
+                    styling.pageBgColor === '#0b0f19'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-900 hover:bg-black text-amber-300'
+                  }`}
+                  title="Đen Đậm Casino (#0b0f19)"
+                >
+                  Đen Casino
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChangeStyling({ ...styling, pageBgColor: '#ffffff' })}
+                  className={`text-[10px] px-1.5 py-0.5 rounded font-semibold cursor-pointer transition ${
+                    styling.pageBgColor === '#ffffff'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-white hover:bg-slate-100 text-slate-800 border border-slate-300'
+                  }`}
+                  title="Trắng Sáng (#ffffff)"
+                >
+                  Trắng Sáng
+                </button>
               </div>
             </div>
           </div>
@@ -1999,7 +2145,13 @@ export const StepSubpageStyling: React.FC<StepSubpageStylingProps> = ({
           </div>
 
           {/* Subpage Content Container */}
-          <div className="mx-auto" style={{ maxWidth: styling.contentMaxWidth || '1080px' }}>
+          <div
+            className="mx-auto transition-colors duration-300 p-4 sm:p-6 rounded-2xl"
+            style={{
+              maxWidth: styling.contentMaxWidth || '1080px',
+              backgroundColor: styling.pageBgColor && styling.pageBgColor !== 'transparent' ? styling.pageBgColor : 'transparent',
+            }}
+          >
             {previewMode === 'post' ? (
               /* POST MODE: Grid with Content (9 cols) + Right Sidebar (3 cols) */
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -2075,7 +2227,11 @@ export const StepSubpageStyling: React.FC<StepSubpageStylingProps> = ({
                     }}
                   >
                     <p>
-                      Tỷ lệ hoàn trả cho người chơi (Return to Player - <strong style={{ color: styling.heading3Color }}>RTP</strong>) là một trong những chỉ số quan trọng nhất giúp game thủ lựa chọn tựa game slot tối ưu lợi nhuận. Tại nền tảng <strong style={{ color: '#ffffff' }}>JuegaLotto 365</strong>, tất cả trò chơi đều được cấp phép và kiểm định minh bạch bởi tổ chức quốc tế.
+                      Tỷ lệ hoàn trả cho người chơi (Return to Player -{' '}
+                      <strong style={{ color: styling.boldColor || (styling.themeMode === 'light' ? '#0f172a' : '#fde047') }}>RTP</strong>
+                      ) là một trong những chỉ số quan trọng nhất giúp game thủ lựa chọn tựa game slot tối ưu lợi nhuận. Tại nền tảng{' '}
+                      <strong style={{ color: styling.boldColor || (styling.themeMode === 'light' ? '#0f172a' : '#fde047') }}>JuegaLotto 365</strong>
+                      , tất cả trò chơi đều được cấp phép và kiểm định minh bạch bởi tổ chức quốc tế.
                     </p>
 
                     {/* Callout Box */}
@@ -2332,7 +2488,9 @@ export const StepSubpageStyling: React.FC<StepSubpageStylingProps> = ({
                   }}
                 >
                   <p>
-                    Chào mừng bạn đến với chuyên mục cá cược thể thao trực tuyến chính thức của <strong style={{ color: styling.heading3Color }}>JuegaLotto 365</strong>. Tại đây bạn có thể dễ dàng theo dõi trực tiếp các trận đấu đỉnh cao của giải Vô địch Quốc gia Mexico (Liga MX), Premier League và Cúp C1 Châu Âu với tỷ lệ cược cập nhật liên tục.
+                    Chào mừng bạn đến với chuyên mục cá cược thể thao trực tuyến chính thức của{' '}
+                    <strong style={{ color: styling.boldColor || (styling.themeMode === 'light' ? '#0f172a' : '#fde047') }}>JuegaLotto 365</strong>
+                    . Tại đây bạn có thể dễ dàng theo dõi trực tiếp các trận đấu đỉnh cao của giải Vô địch Quốc gia Mexico (Liga MX), Premier League và Cúp C1 Châu Âu với tỷ lệ cược cập nhật liên tục.
                   </p>
 
                   <div
